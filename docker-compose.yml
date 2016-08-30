@@ -1,0 +1,8 @@
+version: '2'
+services:
+  he-auth-service:
+    build: .
+    depends_on:
+      - vault
+  vault:
+    image: vault
