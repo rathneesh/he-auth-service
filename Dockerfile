@@ -1,4 +1,4 @@
-FROM node:4
+FROM node:6.5.0
 
 ADD . /usr/src/app
 
