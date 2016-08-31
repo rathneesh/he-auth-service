@@ -5,4 +5,4 @@ services:
     depends_on:
       - vault
   vault:
-    image: vault
+    image: vault:0.6.1
