@@ -18,11 +18,12 @@ app.use(helmet());
 // Parse application/json
 app.use(bodyParser.json());
 
+// Output HTTP interactions. Using Combined format.
+app.use(morgan('combined'))
+
 app.get('/', testRoute.index);
 
-let privateKey;
-let certificate;
-let passphrase;
+let privateKey, certificate, passphrase;
 
 try {
     privateKey  = fs.readFileSync('key.pem', 'utf8');
@@ -30,13 +31,14 @@ try {
     passphrase ='default'
 } catch (err) {
     console.log("An error occurred while search for `key.pem` and `cert.pem`. " + err.toString())
+    process.exit(1)
 }
 
 let credentials = {key: privateKey, cert: certificate, passphrase: passphrase};
 
 let httpsServer = https.createServer(credentials, app);
 
-console.log('Express started on port 3000');
+logger.info('Express started on port 3000');
 httpsServer.listen(3000);
 
 // Export express app for testing
