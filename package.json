@@ -6,10 +6,13 @@
   "dependencies": {
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
+    "express-validator": "^2.20.8",
     "helmet": "^2.1.2",
     "mocha": "^3.0.2",
+    "mongoose": "^4.6.0",
     "morgan": "~1.7.0",
     "nconf": "^0.8.4",
+    "node-rsa": "^0.4.1",
     "nsp": "^2.6.1",
     "supertest": "^2.0.0",
     "winston": "~2.2.0"

@@ -2,9 +2,16 @@ version: '2'
 services:
   he-auth-service:
     build: .
+    environment:
+      IDENTITY_FQDN: "example.com"
+      PROTOCOL: "https"
+      JWT_SECRET: "default"
+      MONGO: "mongodb://mongo:27017"
     ports:
       - "80:3000"
     depends_on:
       - vault
   vault:
     image: vault:0.6.1
+  mongo:
+    image: mongo:3.3

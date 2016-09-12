@@ -1,5 +1,2 @@
 .gitignore
 npm-debug.log
-cert.pem
-key.pem
-*.pem
