@@ -15,6 +15,7 @@
     "node-rsa": "^0.4.1",
     "nsp": "^2.6.1",
     "supertest": "^2.0.0",
+    "uuid4": "^1.0.0",
     "winston": "~2.2.0"
   },
   "devDependencies": {},

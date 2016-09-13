@@ -1,10 +1,12 @@
 let tokenUrl = require('../resources/token_url.es6');
+let tokenUrlResponse = require('../resources/token_url_response.es6');
+let strings = require('../resources/strings.es6');
 let jwt = require('jsonwebtoken');
-let NodeRSA = require('node-rsa');
 let util = require('util');
+let uuid = require('uuid4');
 
-let key = new NodeRSA({b: 512});
-let pem = key.exportKey('pkcs1-private-pem');
+// TODO: assign and store uuid password for each token created
+let secret = uuid();
 
 let createToken = (req, res) => {
     req.checkBody('user_info', 'Invalid user_info').notEmpty();
@@ -27,33 +29,60 @@ let createToken = (req, res) => {
             "user_info": req.body.user_info,
             "integration_info": req.body.integration_info
         },
-        pem, { algorithm: 'RS256', expiresIn: ttl});
+        secret, { expiresIn: ttl });
 
     let errors = req.validationErrors();
     if (errors) {
-        res.send('There have been validation errors: ' + util.inspect(errors), 400);
-        return;
+        return res.status(500).send({
+            message: 'There have been validation errors: ' + util.inspect(errors)
+        });
+    } else {
+        return res.status(201).send(
+            tokenUrlResponse(
+                strings.TOKEN_URL_RESPONSE_CREATE_MSG,
+                token,
+                tokenUrl(token)
+            )
+        );
     }
-
-    res.send(tokenUrl(token), 200);
 };
 
 let validateToken = (req, res) => {
-    console.log("token");
-    console.log(req.params.token);
-    console.log("jwtkey");
-    console.log(jwtKey);
-    jwt.verify(req.params.token, pem, function(err, decoded) {
-        if (err) {
-            return console.log("failed to decoede");
-        } else {
-            console.log("decoded");
-            console.log(decoded);
-            if (decoded.exp < Date.now() / 1000) {
-                console.log("expired");
+    if (req.params.token) {
+        jwt.verify(req.params.token, secret, function(err, decoded) {
+            if (err) {
+                return res.status(404).send(
+                    tokenUrlResponse(
+                        strings.TOKEN_URL_RESPONSE_NOT_FOUND_MSG,
+                        req.params.token,
+                        ""
+                    )
+                );
+            } else {
+                if (decoded.exp < Date.now() / 1000) {
+                    return res.status(404).send(
+                        tokenUrlResponse(
+                            strings.TOKEN_URL_RESPONSE_NOT_FOUND_MSG,
+                            req.params.token,
+                            ""
+                        )
+                    )
+                } else {
+                    return res.status(200).send(
+                        tokenUrlResponse(
+                            strings.TOKEN_URL_RESPONSE_VERIFY_MSG,
+                            decoded,
+                            ""
+                        )
+                    )
+                }
             }
-        }
-    });
+        });
+    } else {
+        return res.status(500).send({
+            message: 'No token provided as part of the URL.'
+        });
+    }
 };
 
 exports.createToken = createToken;
