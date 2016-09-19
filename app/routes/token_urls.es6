@@ -1,9 +1,10 @@
 let tokenUrl = require('../resources/token_url.es6');
 let tokenUrlResponse = require('../resources/token_url_response.es6');
-let strings = require('../resources/strings.es6');
+let stringsResource = require('../resources/strings.es6');
 let jwt = require('jsonwebtoken');
 let util = require('util');
 let uuid = require('uuid4');
+let server = require('../../server.es6');
 
 // TODO: assign and store uuid password for each token created
 let secret = uuid();
@@ -18,33 +19,43 @@ let createToken = (req, res) => {
     let rightNow = Date.now() / 1000;
     let ttl = req.body.url_props.ttl;
 
-    // sign with RSA SHA256
-    var token = jwt.sign(
-        {
-            "iss": "HE_AUTH_SERVICE_ISSUER",
-            "aud": [ "HE_AUTH_SERVICE_AUDIENCE" ],
-            "iat": rightNow,
-            "jti": "72747e4c-e38c-421e-88b6-d644cf322471",
-            "bot_info": req.body.bot_info,
-            "user_info": req.body.user_info,
-            "integration_info": req.body.integration_info
-        },
-        secret, { expiresIn: ttl });
+    let issuer = server.app.get("jwt_issuer");
+    let audience = server.app.get("jwt_audience");
 
+    // Validate fields. Exit if invalid.
     let errors = req.validationErrors();
     if (errors) {
         return res.status(500).send({
             message: 'There have been validation errors: ' + util.inspect(errors)
         });
-    } else {
-        return res.status(201).send(
-            tokenUrlResponse(
-                strings.TOKEN_URL_RESPONSE_CREATE_MSG,
-                token,
-                tokenUrl(token)
-            )
-        );
     }
+
+    // sign with RSA SHA256
+    let payload = {
+        "iss": issuer,
+        "aud": [ audience ],
+        "iat": rightNow,
+        "jti": uuid(),
+        "bot_info": req.body.bot_info,
+        "user_info": req.body.user_info,
+        "integration_info": req.body.integration_info
+    };
+    let options = {
+        expiresIn: ttl
+    };
+    let token = jwt.sign(
+        payload,
+        secret,
+        options
+    );
+
+    return res.status(201).send(
+        tokenUrlResponse(
+            stringsResource.TOKEN_URL_RESPONSE_CREATE_MSG,
+            token,
+            tokenUrl(token)
+        )
+    );
 };
 
 let validateToken = (req, res) => {
@@ -53,34 +64,34 @@ let validateToken = (req, res) => {
             if (err) {
                 return res.status(404).send(
                     tokenUrlResponse(
-                        strings.TOKEN_URL_RESPONSE_NOT_FOUND_MSG,
+                        stringsResource.TOKEN_URL_RESPONSE_NOT_FOUND_MSG,
                         req.params.token,
-                        ""
+                        server.he_identity_portal_endpoint + "/signin/" + req.params.token
                     )
                 );
             } else {
-                if (decoded.exp < Date.now() / 1000) {
+                if (decoded.exp < (Date.now() / 1000)) {
                     return res.status(404).send(
                         tokenUrlResponse(
-                            strings.TOKEN_URL_RESPONSE_NOT_FOUND_MSG,
+                            stringsResource.TOKEN_URL_RESPONSE_NOT_FOUND_MSG,
                             req.params.token,
-                            ""
+                            server.he_identity_portal_endpoint + "/signin/" + req.params.token
                         )
                     )
                 } else {
                     return res.status(200).send(
                         tokenUrlResponse(
-                            strings.TOKEN_URL_RESPONSE_VERIFY_MSG,
+                            stringsResource.TOKEN_URL_RESPONSE_VERIFY_MSG,
                             decoded,
-                            ""
+                            server.he_identity_portal_endpoint + "/signin/" + req.params.token
                         )
                     )
                 }
             }
         });
     } else {
-        return res.status(500).send({
-            message: 'No token provided as part of the URL.'
+        return res.status(404).send({
+            message: stringsResource.TOKEN_URL_RESPONSE_NOT_FOUND_MSG
         });
     }
 };

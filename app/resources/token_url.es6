@@ -1,11 +1,10 @@
 let server = require('../../server.es6');
 
-const tokenSchema = "<protocol>://<identity_fqdn>/signin/<jwt_token>";
+const tokenSchema = "<he_identity_portal_endpoint>/signin/<jwt_token>";
 
 module.exports = exports = function(token) {
 
     return tokenSchema
-        .replace("<protocol>", server.protocol)
-        .replace("<identity_fqdn>", server.identity_fqdn)
+        .replace("<he_identity_portal_endpoint>", server.he_identity_portal_endpoint)
         .replace("<jwt_token>", token)
 };
