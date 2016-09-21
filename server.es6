@@ -55,6 +55,7 @@ app.use(expressValidator());
 
 app.post('/token_urls', tokenRoute.createToken);
 app.get('/token_urls/:token', tokenRoute.validateToken);
+app.delete('/token_urls/:token', tokenRoute.deleteToken);
 // app.delete('/token_urls/:token', testRoute.index);
 
 let privateKey;

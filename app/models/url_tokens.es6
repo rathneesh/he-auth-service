@@ -13,7 +13,7 @@ class TokenList {
         }
     }
     addToken(token) {
-        this.tokens.append(token);
+        this.tokens.push(token);
     }
     hasToken(token) {
         return this.tokens.indexOf(token) ==! -1;

@@ -5,6 +5,7 @@ let jwt = require('jsonwebtoken');
 let util = require('util');
 let uuid = require('uuid4');
 let server = require('../../server.es6');
+let urlTokens = require('../models/url_tokens.es6')
 
 // TODO: assign and store uuid password for each token created
 let secret = uuid();
@@ -40,14 +41,19 @@ let createToken = (req, res) => {
         "user_info": req.body.user_info,
         "integration_info": req.body.integration_info
     };
-    let options = {
-        expiresIn: ttl
-    };
+
     let token = jwt.sign(
         payload,
         secret,
-        options
+        {
+            expiresIn: ttl
+        }
     );
+
+    // Add it to the token bag before sending
+    urlTokens.addToken(token);
+    console.log('has token:');
+    console.log(urlTokens.hasToken(token));    
 
     return res.status(201).send(
         tokenUrlResponse(
@@ -59,7 +65,9 @@ let createToken = (req, res) => {
 };
 
 let validateToken = (req, res) => {
-    if (req.params.token) {
+    console.log('has token:');
+    console.log(urlTokens.hasToken(req.params.token));  
+    if (req.params.token && urlTokens.hasToken(req.params.token)) {
         jwt.verify(req.params.token, secret, function(err, decoded) {
             if (err) {
                 return res.status(404).send(
@@ -96,5 +104,33 @@ let validateToken = (req, res) => {
     }
 };
 
+let deleteToken = (req, res) => {
+    let token = req.params.token
+    if (token && urlTokens.hasToken(token)) {
+        if (urlTokens.removeToken(token)) {
+            return res.status(200).send(
+                tokenUrlResponse(
+                    stringsResource.TOKEN_URL_RESPONSE_DELETE_MSG,
+                    token,
+                    server.he_identity_portal_endpoint + "/signin/" + token
+                )
+            )
+        } else {
+            return res.status(500).send(
+                tokenUrlResponse(
+                    stringsResource.INTERNAL_SERVER_ERROR_MSG,
+                    token,
+                    ''
+                )
+            )
+        }
+    } else {
+        return res.status(404).send({
+            message: stringsResource.TOKEN_URL_RESPONSE_NOT_FOUND_MSG
+        });
+    }
+};
+
 exports.createToken = createToken;
 exports.validateToken = validateToken;
+exports.deleteToken = deleteToken;
