@@ -2,9 +2,18 @@ version: '2'
 services:
   he-auth-service:
     build: .
+    environment:
+      HE_IDENTITY_PORTAL_ENDPOINT: "https://example.com"
+      HE_AUTH_JWT_SECRET:
+      MONGO: "mongodb://mongo:27017"
+      HE_AUTH_SSL_PASS:
     ports:
-      - "80:3000"
+      - "8080:3000"
     depends_on:
       - vault
+    volumes:
+      - ./certs:/usr/src/app/certs
   vault:
     image: vault:0.6.1
+  mongo:
+    image: mongo:3.3
