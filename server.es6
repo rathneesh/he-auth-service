@@ -95,8 +95,8 @@ let certificate;
 let passphrase;
 
 try {
-    privateKey  = fs.readFileSync('./certs/key.pem', 'utf8');
-    certificate = fs.readFileSync('./certs/cert.pem', 'utf8');
+    privateKey  = fs.readFileSync('./key.pem', 'utf8');
+    certificate = fs.readFileSync('./cert.pem', 'utf8');
     passphrase = config.get("HE_AUTH_SSL_PASS");
 } catch (err) {
     log.info("An error occurred while searching for `key.pem` and `cert.pem`. " + err.toString())

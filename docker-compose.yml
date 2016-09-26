@@ -4,9 +4,9 @@ services:
     build: .
     environment:
       HE_IDENTITY_PORTAL_ENDPOINT: "https://example.com"
-      HE_AUTH_JWT_SECRET:
+      HE_AUTH_JWT_SECRET: "secret"
       MONGO: "mongodb://mongo:27017"
-      HE_AUTH_SSL_PASS:
+      HE_AUTH_SSL_PASS: "default"
     ports:
       - "8080:3000"
     depends_on:
