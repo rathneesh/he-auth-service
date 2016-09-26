@@ -10,6 +10,8 @@ let mongoose = require('mongoose');
 let expressValidator = require('express-validator');
 let stringsResource = require('./app/resources/strings.es6');
 let tokenRoute = require('./app/routes/token_urls.es6');
+let secretsRoute = require('./app/routes/secrets.es6');
+let vault = require('node-vault-js');
 
 // Set configuration hierarchy
 config.argv()
@@ -22,6 +24,34 @@ let app = express();
 mongoose.connect(
     config.get("MONGO") || log.error('MONGO ENDPOINT NOT PROVIDED!') && process.exit(-1)
 );
+
+// Connect to vault
+let vaultHandle = new vault({
+    endpoint: 'http://vault:8200',
+    token: 'myroot'
+});
+
+vaultHandle.write('secret/hello', { value: 'world', lease: '1s' }, function(err, result) {
+  if (err) {
+    throw err
+  }
+  console.log('Wrote with response: ', result)
+
+  vault.read('secret/hello', function(err, result) {
+    if (err) {
+      throw err
+    }
+    console.log('Read with response: ', result)
+
+    vault.delete('secret/hello', function(err, result) {
+    if (err) {
+      throw err
+    }
+    console.log('Deleted with response: ', result)
+
+    });
+  });
+});
 
 // Secret for creating and verifying jwts
 app.set('jwt_secret', 
@@ -48,15 +78,14 @@ app.use(bodyParser.json());
 // Validate posts
 app.use(expressValidator());
 
-// app.post('/secrets', testRoute.index);
-// app.put('/secrets/:userId/:integrationName', testRoute.index);
-// app.get('/secrets/:userId/:integrationName', testRoute.index);
-// app.delete('/secrets/:userId/:integrationName', testRoute.index);
+app.post('/secrets', secretsRoute.authenticateSecrets);
+// app.put('/secrets/:userId/:integrationName', secretsRoute.index);
+// app.get('/secrets/:userId/:integrationName', secretsRoute.index);
+// app.delete('/secrets/:userId/:integrationName', secretsRoute.index);
 
 app.post('/token_urls', tokenRoute.createToken);
 app.get('/token_urls/:token', tokenRoute.validateToken);
 app.delete('/token_urls/:token', tokenRoute.deleteToken);
-// app.delete('/token_urls/:token', testRoute.index);
 
 let privateKey;
 let certificate;
