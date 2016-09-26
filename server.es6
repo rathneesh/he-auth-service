@@ -17,13 +17,26 @@ let vault = require('node-vault-js');
 config.argv()
     .env();
 
+try {
+    // Set required environment variables.
+    config.required([
+        'HE_AUTH_JWT_SECRET',
+        'HE_AUTH_SSL_PASS',
+        'MONGO',
+        'HE_IDENTITY_PORTAL_ENDPOINT'
+    ]);
+} catch (err) {
+    // Exit if not present.
+    console.log(err.message);
+    process.exit(1);
+}
+
+
 // Load express
 let app = express();
 
 // Connect to Mongo
-mongoose.connect(
-    config.get("MONGO") || log.error('MONGO ENDPOINT NOT PROVIDED!') && process.exit(-1)
-);
+mongoose.connect(config.get("MONGO"));
 
 // Connect to vault
 let vaultHandle = new vault({
@@ -54,19 +67,13 @@ vaultHandle.write('secret/hello', { value: 'world', lease: '1s' }, function(err,
 });
 
 // Secret for creating and verifying jwts
-app.set('jwt_secret', 
-    config.get("HE_AUTH_JWT_SECRET") || log.error('HE_AUTH_JWT_SECRET NOT PROVIDED!') && process.exit(-1)
-);
+app.set('jwt_secret',  config.get("HE_AUTH_JWT_SECRET"));
 
 // Secret for creating and verifying jwts
-app.set('jwt_issuer',
-    config.get("HE_AUTH_SERVICE_ISSUER") || stringsResource.DEFAULT_ISSUER
-);
+app.set('jwt_issuer', config.get("HE_AUTH_SERVICE_ISSUER") || stringsResource.DEFAULT_ISSUER);
 
 // Secret for creating and verifying jwts
-app.set('jwt_audience',
-    config.get("HE_AUTH_SERVICE_ISSUER") || stringsResource.DEFAULT_AUDIENCE
-);
+app.set('jwt_audience', config.get("HE_AUTH_SERVICE_ISSUER") || stringsResource.DEFAULT_AUDIENCE);
 
 // Helmet can help protect your app from some well-known web vulnerabilities by setting HTTP headers appropriately.
 app.use(helmet());
@@ -92,14 +99,18 @@ let certificate;
 let passphrase;
 
 try {
-    privateKey  = fs.readFileSync('key.pem', 'utf8');
-    certificate = fs.readFileSync('cert.pem', 'utf8');
-    passphrase = config.get("HE_AUTH_SSL_PASS") || log.error('HE_AUTH_SSL_PASS NOT PROVIDED!') && process.exit(-1)
+    privateKey  = fs.readFileSync('./certs/key.pem', 'utf8');
+    certificate = fs.readFileSync('./certs/cert.pem', 'utf8');
+    passphrase = config.get("HE_AUTH_SSL_PASS");
 } catch (err) {
     log.info("An error occurred while searching for `key.pem` and `cert.pem`. " + err.toString())
 }
 
-let credentials = {key: privateKey, cert: certificate, passphrase: passphrase};
+let credentials = {
+    key: privateKey,
+    cert: certificate,
+    passphrase: passphrase
+};
 
 let httpsServer = https.createServer(credentials, app);
 
@@ -108,4 +119,4 @@ httpsServer.listen(3000);
 
 // Export express app for testing
 exports.app = app;
-exports.he_identity_portal_endpoint = config.get("HE_IDENTITY_PORTAL_ENDPOINT") || log.error('IDENTITY FQDN NOT PROVIDED!') && process.exit(-1);
+exports.he_identity_portal_endpoint = config.get("HE_IDENTITY_PORTAL_ENDPOINT");

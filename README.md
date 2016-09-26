@@ -1,8 +1,59 @@
 # he-auth-service
 
-# Generate key cert
-`openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 9999`
+## Getting started 
 
-`curl -H "Content-Type: application/json" -X POST -d '{"user_info":"xyz","integration_info":"xyz","bot_info":"xyz","url_props": {"ttl": 5}}' -k https://localhost:80/token_urls`
+> Clone this repository into your local environment.
 
-`curl -k https://localhost:80/token_urls/eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIRV9BVVRIX1NFUlZJQ0VfSVNTVUVSIiwiYXVkIjpbIkhFX0FVVEhfU0VSVklDRV9BVURJRU5DRSJdLCJpYXQiOjE0NzM2NDY5MDkuNzk0LCJqdGkiOiI3Mjc0N2U0Yy1lMzhjLTQyMWUtODhiNi1kNjQ0Y2YzMjI0NzEiLCJib3RfaW5mbyI6Inh5eiIsInVzZXJfaW5mbyI6Inh5eiIsImludGVncmF0aW9uX2luZm8iOiJ4eXoiLCJleHAiOjE0NzM2NDY5MTQuNzk0fQ.Mim5MYUHScOTwBmJBZvdU3DyCtlyr5nYSwPlOZl3tfjHpZJlmCwV2wNuJIZOJKLoT8NFlIBu6AIforwpWvR6zg`
+### Generate key cert
+
+```bash
+    # create certificates in ./certs directory
+    mkdir certs && \
+        openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 9999
+```
+
+### Run with docker-compose
+
+```bash
+# To build and run:
+docker-compose up --build
+ 
+# Or to just run (with local built image):
+docker-compose up
+```
+
+> Your `he-auth-service` will be available on `localhost:8080`.
+
+## API Usage
+
+### `token_url` actions
+ 
+#### Create
+
+```bash
+
+# Create token_url that expires in 5 minutes
+curl -H "Content-Type: application/json" \
+    -X POST \
+    -d '{"user_info":"xyz","integration_info":"xyz","bot_info":"xyz","url_props": {"ttl": 300}}' \
+    -k https://localhost:8080/token_urls
+
+```
+
+Sample Response:
+
+```json
+{
+   "message":"token_url created",
+   "token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIRV9ERUZBVUxUX0lTU1VFUiIsImF1ZCI6WyJIRV9ERUZBVUxUX0FVRElFTkNFIl0sImlhdCI6MTQ3NDczNDM3My43NjksImp0aSI6IjRiYjllNTIyLThmZjYtNGZmYS1iYzU2LTg0ZmU2NTZjYzQ2ZCIsImJvdF9pbmZvIjoieHl6IiwidXNlcl9pbmZvIjoieHl6IiwiaW50ZWdyYXRpb25faW5mbyI6Inh5eiIsImV4cCI6MTQ3NDczNDM3OC43Njl9.mD-iKAj5CfnT0215oi3W8wrXaLORKk-SApAFreC_B00",
+   "url":"https://example.com/signin/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIRV9ERUZBVUxUX0lTU1VFUiIsImF1ZCI6WyJIRV9ERUZBVUxUX0FVRElFTkNFIl0sImlhdCI6MTQ3NDczNDM3My43NjksImp0aSI6IjRiYjllNTIyLThmZjYtNGZmYS1iYzU2LTg0ZmU2NTZjYzQ2ZCIsImJvdF9pbmZvIjoieHl6IiwidXNlcl9pbmZvIjoieHl6IiwiaW50ZWdyYXRpb25faW5mbyI6Inh5eiIsImV4cCI6MTQ3NDczNDM3OC43Njl9.mD-iKAj5CfnT0215oi3W8wrXaLORKk-SApAFreC_B00"
+}
+```
+
+#### Get
+
+> Use the endpoint of the `he-auth-service` and append the `token` value from above to get the infor. 
+
+```bash
+curl -k https://localhost:8080/token_urls/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIRV9ERUZBVUxUX0lTU1VFUiIsImF1ZCI6WyJIRV9ERUZBVUxUX0FVRElFTkNFIl0sImlhdCI6MTQ3NDczNDM3My43NjksImp0aSI6IjRiYjllNTIyLThmZjYtNGZmYS1iYzU2LTg0ZmU2NTZjYzQ2ZCIsImJvdF9pbmZvIjoieHl6IiwidXNlcl9pbmZvIjoieHl6IiwiaW50ZWdyYXRpb25faW5mbyI6Inh5eiIsImV4cCI6MTQ3NDczNDM3OC43Njl9.mD-iKAj5CfnT0215oi3W8wrXaLORKk-SApAFreC_B00
+```

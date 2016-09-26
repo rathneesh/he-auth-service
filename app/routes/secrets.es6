@@ -42,7 +42,7 @@ let authenticateSecrets = (req, res) => {
                 }
             );
         }
-        
+
         log.info(
             `Successful authentication against ${req.body.integration_name.name} as ${req.body.user_info.id}`
         );
