@@ -6,7 +6,6 @@ let bodyParser = require('body-parser');
 let morgan = require('morgan');
 let log = require('winston');
 let helmet = require('helmet');
-let mongoose = require('mongoose');
 let expressValidator = require('express-validator');
 let stringsResource = require('./app/resources/strings.es6');
 let tokenRoute = require('./app/routes/token_urls.es6');
@@ -34,9 +33,6 @@ try {
 
 // Load express
 let app = express();
-
-// Connect to Mongo
-mongoose.connect(config.get("MONGO"));
 
 // Connect to vault
 let vaultHandle = new vault({
