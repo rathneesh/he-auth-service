@@ -22,7 +22,8 @@ try {
         'HE_AUTH_JWT_SECRET',
         'HE_AUTH_SSL_PASS',
         'MONGO',
-        'HE_IDENTITY_PORTAL_ENDPOINT'
+        'HE_IDENTITY_PORTAL_ENDPOINT',
+        'VAULT_DEV_ROOT_TOKEN_ID'
     ]);
 } catch (err) {
     // Exit if not present.
@@ -36,8 +37,8 @@ let app = express();
 
 // Connect to vault
 let vaultHandle = new vault({
-    endpoint: 'http://vault:8200',
-    token: 'myroot'
+    endpoint: config.get("HE_VAULT_ENDPOINT") || 'http://vault:8200',
+    token: config.get("VAULT_DEV_ROOT_TOKEN_ID")
 });
 
 vaultHandle.write('secret/hello', { value: 'world', lease: '1s' }, function(err, result) {
