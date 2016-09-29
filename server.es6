@@ -10,7 +10,7 @@ let expressValidator = require('express-validator');
 let stringsResource = require('./app/resources/strings.es6');
 let tokenRoute = require('./app/routes/token_urls.es6');
 let secretsRoute = require('./app/routes/secrets.es6');
-let vault = require('node-vault-js');
+var Vaulted = require('vaulted');
 
 // Set configuration hierarchy
 config.argv()
@@ -36,32 +36,17 @@ try {
 let app = express();
 
 // Connect to vault
-let vaultHandle = new vault({
-    endpoint: config.get("HE_VAULT_ENDPOINT") || 'http://vault:8200',
-    token: config.get("VAULT_DEV_ROOT_TOKEN_ID")
+let myVault = new Vaulted({
+  vault_host: config.get("HE_VAULT_ENDPOINT") || 'vault',
+  vault_port: 8200,
+  vault_ssl: false,
+  vault_token: config.get("VAULT_DEV_ROOT_TOKEN_ID")
 });
 
-vaultHandle.write('secret/hello', { value: 'world', lease: '1s' }, function(err, result) {
-  if (err) {
-    throw err
-  }
-  console.log('Wrote with response: ', result)
-
-  vault.read('secret/hello', function(err, result) {
-    if (err) {
-      throw err
-    }
-    console.log('Read with response: ', result)
-
-    vault.delete('secret/hello', function(err, result) {
-    if (err) {
-      throw err
-    }
-    console.log('Deleted with response: ', result)
-
-    });
+myVault.prepare()
+  .then(function () {
+    console.log('Vault is now ready!');
   });
-});
 
 // Secret for creating and verifying jwts
 app.set('jwt_secret',  config.get("HE_AUTH_JWT_SECRET"));
@@ -117,3 +102,4 @@ httpsServer.listen(3000);
 // Export express app for testing
 exports.app = app;
 exports.he_identity_portal_endpoint = config.get("HE_IDENTITY_PORTAL_ENDPOINT");
+exports.vault = myVault;

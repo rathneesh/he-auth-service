@@ -34,9 +34,10 @@ exports.SCHEMA_REQUIREMENT_NOT_MET = `Arguments do not meet schema requirements`
 exports.SECRETS_SUCCESS_DELETE_MSG = `Successfully deleted secrets at /secrets/<user_name>/<integration_name>`;
 exports.SECRETS_SUCCESS_CREATE_MSG = `Successfully saved secrets at /secrets/<user_name>/<integration_name>`;
 exports.SECRETS_SUCCESS_UPDATE_MSG = `Successfully updated secrets at /secrets/<user_name>/<integration_name>`;
-exports.SECRETS_SUCCESS_NOT_FOUND_MSG = `Error retrieving secrets at /secrets/<user_name>/<integration_name>`;
-exports.SECRETS_SUCCESS_UNAUTHORIZED_MSG = `Error authentication against integration <integration_name>`;
-exports.SECRETS_SUCCESS_INTERNAL_ERROR_MSG = `There was an internal server error while retrieving secrests at /secrets/<user_name>/<integration_name>`;
+exports.SECRETS_NOT_FOUND_MSG = `Error retrieving secrets at /secrets/<user_name>/<integration_name>`;
+exports.SECRETS_FAILED_TO_WRITE = `There was an internal server error while writing secrets for <user_name>/<integration_name>`;
+exports.SECRETS_UNAUTHORIZED_MSG = `Error authentication against integration <integration_name>`;
+exports.SECRETS_INTERNAL_ERROR_MSG = `There was an internal server error while retrieving secrests at /secrets/<user_name>/<integration_name>`;
 
 
 exports.DEFAULT_ISSUER = "HE_DEFAULT_ISSUER";

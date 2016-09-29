@@ -1,6 +1,7 @@
 let Joi = require('joi');
 let stringsResource = require('../../resources/strings.es6');
-let secretsList = require('../../models/secrets.es6')
+let app = require('../../../server.es6');
+let log = require('winston');
 
 let storeCredentials = (integration, user, secrets, cb) => {
     let schema = Joi.object().keys({
@@ -14,14 +15,18 @@ let storeCredentials = (integration, user, secrets, cb) => {
     let noError = null
 
     if (result.error === noError) {
-        let storeCredentials = () => {
-            return secretsList.addSecret({
-                secrets,
-                integration,
-                user
-            });
-        }
-        cb(null, storeCredentials())
+        app.vault.write({
+            body: secrets,
+            id: `${integration}/${user}`
+        })
+        .then(function success() {
+            log.info(`Succesfully wrote secret for ${integration}/${user}`);
+            cb(null, true);
+        })
+        .catch(function failure() {
+            log.info(`Could not write secret for ${integration}/${user}`);
+            cb(new Error(stringsResource.SECRETS_FAILED_TO_WRITE), false)
+        });
     } else {
         cb(new Error(stringsResource.SCHEMA_REQUIREMENT_NOT_MET), false)
     }

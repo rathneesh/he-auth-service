@@ -15,10 +15,10 @@
     "morgan": "~1.7.0",
     "nconf": "^0.8.4",
     "node-rsa": "^0.4.1",
-    "node-vault-js": "^1.2.0",
     "nsp": "^2.6.1",
     "supertest": "^2.0.0",
     "uuid4": "^1.0.0",
+    "vaulted": "^3.1.0",
     "winston": "~2.2.0"
   },
   "devDependencies": {},
