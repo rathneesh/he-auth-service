@@ -57,3 +57,27 @@ Sample Response:
 ```bash
 curl -k https://localhost:8080/token_urls/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIRV9ERUZBVUxUX0lTU1VFUiIsImF1ZCI6WyJIRV9ERUZBVUxUX0FVRElFTkNFIl0sImlhdCI6MTQ3NDczNDM3My43NjksImp0aSI6IjRiYjllNTIyLThmZjYtNGZmYS1iYzU2LTg0ZmU2NTZjYzQ2ZCIsImJvdF9pbmZvIjoieHl6IiwidXNlcl9pbmZvIjoieHl6IiwiaW50ZWdyYXRpb25faW5mbyI6Inh5eiIsImV4cCI6MTQ3NDczNDM3OC43Njl9.mD-iKAj5CfnT0215oi3W8wrXaLORKk-SApAFreC_B00
 ```
+
+#### Secrets post
+
+```bash
+curl -k -H "Content-Type: application/json" -k -X POST -d '{"secrets": {"password": "xy888z"}, "user_info": {"id": "hello"}, "integration_name": {"name": "efve"} }' https://localhost:8080/secret
+```
+
+#### Secrets get
+
+```bash
+curl -k -H "Content-Type: application/json" https://localhost:8080/secrets/hello/efve
+```
+
+#### Secrets delete
+
+```bash
+curl -k -H "Content-Type: application/json" -X DELETE https://localhost:8080/secrets/hello/efve
+```
+
+#### Secrets put
+
+```bash
+curl -k -H "Content-Type: application/json" -X DELETE https://localhost:8080/secrets/hello/efve
+```

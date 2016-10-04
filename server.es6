@@ -6,10 +6,11 @@ let bodyParser = require('body-parser');
 let morgan = require('morgan');
 let log = require('winston');
 let helmet = require('helmet');
-let mongoose = require('mongoose');
 let expressValidator = require('express-validator');
 let stringsResource = require('./app/resources/strings.es6');
 let tokenRoute = require('./app/routes/token_urls.es6');
+let secretsRoute = require('./app/routes/secrets.es6');
+var Vaulted = require('vaulted');
 
 // Set configuration hierarchy
 config.argv()
@@ -21,7 +22,8 @@ try {
         'HE_AUTH_JWT_SECRET',
         'HE_AUTH_SSL_PASS',
         'MONGO',
-        'HE_IDENTITY_PORTAL_ENDPOINT'
+        'HE_IDENTITY_PORTAL_ENDPOINT',
+        'VAULT_DEV_ROOT_TOKEN_ID'
     ]);
 } catch (err) {
     // Exit if not present.
@@ -33,8 +35,18 @@ try {
 // Load express
 let app = express();
 
-// Connect to Mongo
-mongoose.connect(config.get("MONGO"));
+// Connect to vault
+let myVault = new Vaulted({
+  vault_host: config.get("HE_VAULT_ENDPOINT") || 'vault',
+  vault_port: 8200,
+  vault_ssl: false,
+  vault_token: config.get("VAULT_DEV_ROOT_TOKEN_ID")
+});
+
+myVault.prepare()
+  .then(function () {
+    console.log('Vault is now ready!');
+  });
 
 // Secret for creating and verifying jwts
 app.set('jwt_secret',  config.get("HE_AUTH_JWT_SECRET"));
@@ -55,23 +67,22 @@ app.use(bodyParser.json());
 // Validate posts
 app.use(expressValidator());
 
-// app.post('/secrets', testRoute.index);
-// app.put('/secrets/:userId/:integrationName', testRoute.index);
-// app.get('/secrets/:userId/:integrationName', testRoute.index);
-// app.delete('/secrets/:userId/:integrationName', testRoute.index);
+app.post('/secrets', secretsRoute.authenticateSecrets);
+app.put('/secrets/:userId/:integrationName', secretsRoute.updateSecrets);
+app.get('/secrets/:userId/:integrationName', secretsRoute.readSecrets);
+app.delete('/secrets/:userId/:integrationName', secretsRoute.deleteSecrets);
 
 app.post('/token_urls', tokenRoute.createToken);
 app.get('/token_urls/:token', tokenRoute.validateToken);
 app.delete('/token_urls/:token', tokenRoute.deleteToken);
-// app.delete('/token_urls/:token', testRoute.index);
 
 let privateKey;
 let certificate;
 let passphrase;
 
 try {
-    privateKey  = fs.readFileSync('./certs/key.pem', 'utf8');
-    certificate = fs.readFileSync('./certs/cert.pem', 'utf8');
+    privateKey  = fs.readFileSync('./key.pem', 'utf8');
+    certificate = fs.readFileSync('./cert.pem', 'utf8');
     passphrase = config.get("HE_AUTH_SSL_PASS");
 } catch (err) {
     log.info("An error occurred while searching for `key.pem` and `cert.pem`. " + err.toString())
@@ -91,3 +102,4 @@ httpsServer.listen(3000);
 // Export express app for testing
 exports.app = app;
 exports.he_identity_portal_endpoint = config.get("HE_IDENTITY_PORTAL_ENDPOINT");
+exports.vault = myVault;
