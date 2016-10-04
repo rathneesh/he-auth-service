@@ -36,6 +36,9 @@ exports.SECRETS_SUCCESS_CREATE_MSG = `Successfully saved secrets at /secrets/<us
 exports.SECRETS_SUCCESS_UPDATE_MSG = `Successfully updated secrets at /secrets/<user_name>/<integration_name>`;
 exports.SECRETS_NOT_FOUND_MSG = `Error retrieving secrets at /secrets/<user_name>/<integration_name>`;
 exports.SECRETS_FAILED_TO_WRITE = `There was an internal server error while writing secrets for <user_name>/<integration_name>`;
+exports.SECRETS_FAILED_TO_WRITE_DUP = `A secret already exists for <user_name>/<integration_name>`;
+exports.SECRETS_FAILED_TO_READ = `There was an internal server error while trying to read secrets for <user_name>/<integration_name>`;
+exports.SECRETS_FAILED_TO_DELETE = `There was an internal server error while trying to delete secrets for <user_name>/<integration_name>`;
 exports.SECRETS_UNAUTHORIZED_MSG = `Error authentication against integration <integration_name>`;
 exports.SECRETS_INTERNAL_ERROR_MSG = `There was an internal server error while retrieving secrests at /secrets/<user_name>/<integration_name>`;
 

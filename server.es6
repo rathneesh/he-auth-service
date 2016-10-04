@@ -68,9 +68,9 @@ app.use(bodyParser.json());
 app.use(expressValidator());
 
 app.post('/secrets', secretsRoute.authenticateSecrets);
-// app.put('/secrets/:userId/:integrationName', secretsRoute.index);
-// app.get('/secrets/:userId/:integrationName', secretsRoute.index);
-// app.delete('/secrets/:userId/:integrationName', secretsRoute.index);
+app.put('/secrets/:userId/:integrationName', secretsRoute.updateSecrets);
+app.get('/secrets/:userId/:integrationName', secretsRoute.readSecrets);
+app.delete('/secrets/:userId/:integrationName', secretsRoute.deleteSecrets);
 
 app.post('/token_urls', tokenRoute.createToken);
 app.get('/token_urls/:token', tokenRoute.validateToken);
