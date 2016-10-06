@@ -21,10 +21,16 @@
     "vaulted": "^3.1.0",
     "winston": "~2.2.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "jshint": "^2.9.2",
+    "jenkins-mocha": "^2.6.0"
+  },
   "scripts": {
-    "test": "nsp check && mocha test/tests.es6",
-    "server": "node server.es6"
+    "test-packages": "nsp check && mocha test/tests.es6",
+    "server": "node server.es6",
+    "coffeelint": "return 0",
+    "jslint": "jshint --exclude-path .gitignore --reporter=jslint .> js-lint.xml || true",
+    "test": "ARTIFACTS_DIR='./' COVERAGE_DIR='./' TEST_DIR='./test/' jenkins-mocha --check-leaks --no-coverage test/**/*.js || true"
   },
   "author": "Jonathan Rosado Lugo",
   "license": "MIT"
