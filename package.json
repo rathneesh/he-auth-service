@@ -30,7 +30,7 @@
     "server": "node server.es6",
     "coffeelint": "return 0",
     "jslint": "jshint --exclude-path .gitignore --reporter=jslint .> js-lint.xml || true",
-    "test": "ARTIFACTS_DIR='./' COVERAGE_DIR='./' TEST_DIR='./test/' jenkins-mocha --check-leaks --no-coverage test/**/*.js || true"
+    "test": "ARTIFACTS_DIR='./' COVERAGE_DIR='./' TEST_DIR='./test/' jenkins-mocha --check-leaks --no-coverage test/*.es6 || true"
   },
   "author": "Jonathan Rosado Lugo",
   "license": "MIT"
