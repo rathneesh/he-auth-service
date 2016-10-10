@@ -6,6 +6,7 @@
   "dependencies": {
     "async": "^2.0.1",
     "body-parser": "^1.15.2",
+    "chai": "^3.5.0",
     "express": "^4.14.0",
     "express-validator": "^2.20.8",
     "helmet": "^2.1.2",
@@ -16,21 +17,24 @@
     "nconf": "^0.8.4",
     "node-rsa": "^0.4.1",
     "nsp": "^2.6.1",
+    "socket.io": "^1.5.0",
     "supertest": "^2.0.0",
     "uuid4": "^1.0.0",
     "vaulted": "^3.1.0",
     "winston": "~2.2.0"
   },
   "devDependencies": {
-    "jshint": "^2.9.2",
-    "jenkins-mocha": "^2.6.0"
+    "chai": "^3.5.0",
+    "jenkins-mocha": "^2.6.0",
+    "jshint": "^2.9.2"
   },
   "scripts": {
     "test-packages": "nsp check && mocha test/tests.es6",
     "server": "node server.es6",
     "coffeelint": "return 0",
     "jslint": "jshint --exclude-path .gitignore --reporter=jslint .> js-lint.xml || true",
-    "test": "ARTIFACTS_DIR='./' COVERAGE_DIR='./' TEST_DIR='./test/' jenkins-mocha --check-leaks --no-coverage test/*.es6 || true"
+    "test": "ARTIFACTS_DIR='./' COVERAGE_DIR='./' TEST_DIR='./test/' jenkins-mocha --check-leaks --no-coverage test/*.es6 || true",
+    "tdd": "echo '**WARNING**: Please restart after adding new test files' && ./node_modules/.bin/mocha --recursive --watch --growl --check-leaks ./test/*.es6"
   },
   "author": "Jonathan Rosado Lugo",
   "license": "MIT"
