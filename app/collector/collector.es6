@@ -1,4 +1,4 @@
-const socket = require('socket.io-client');
+const portal = require('./portal.es6');
 
 const noConfigError = Error("configuration for collector is undefined");
 const missingConfigParam = Error("configuration for collector has missing or invalid parameters");
@@ -18,11 +18,8 @@ class Collector {
       console.log(config);
       throw missingConfigParam;
     }
-    this.io = socket(this.portalEndpoint);
 
-    this.io.on('connect', () => {
-      console.log('Connected successfully');
-    });
+    this.portal = new portal.IdentityPortal({endpoint: this.portalEndpoint});
   }
 
   configOk() {
@@ -31,59 +28,59 @@ class Collector {
       this.tokenCollectionInterval !== 0 && !!this.secretCollectionInterval && !!this.tokenCollectionInterval;
   }
 
-  collectSecrets(cb) {
-    //console.log('Sending collectSecrets msg');
-    this.io.emit('collectSecrets', (err, secrets) => {
+  //saveSecret(secret, cb) {
+  //  // TODO: need he-auth-client
+  //  // TODO: POST secrets to he-auth-service REST API and then emit updateStatus for each request.
+  //  console.log('saving secret');
+  //  let status = null;
+  //  cb(new Error('error saving secret: ' + JSON.stringify(secret)), status);
+  //}
+
+  //saveSecrets(secrets, cb) {
+  //  secrets.forEach(secret => this.saveSecret(secret, cb));
+  //}
+
+  // Start collectors
+  start(cb) {
+    let portal = this.portal;
+    // Make sure we stop collectors first
+    this.stop(() => {
+      console.log('starting..');
+      this.collectInterval = setInterval(() => {
+        portal.collectSecrets((err, secrets) => {
+          if (err) {
+            console.log('error in collector (secrets)');
+          } else console.log('secrets received in collector', secrets);
+        });
+      }, this.secretCollectionInterval);
+      cb(null, 'ok');
+    });
+  }
+
+  // Stop collectors
+  stop(cb) {
+    console.log('stopping');
+    if (this.collectInterval)
+      clearInterval(this.collectInterval);
+    cb(null, 'ok');
+  }
+
+  // Disconnect all clients
+  disconnect(cb) {
+    let portal = this.portal;
+    this.stop((err) => {
       if (err) {
-        console.log('there was a server-side error collecting secrets', err);
-        return cb(err, null);
-      }
-      if (secrets && secrets.length > 0) {
-        cb(null, secrets);
+        cb(err, null);
       } else {
-        cb(new Error('Error: no secrets or secrets empty'), null);
+        // TODO: disconnect any other clients
+        portal.disconnect(cb);
       }
     });
   }
 
-  saveSecret(secret, cb) {
-    // TODO: need he-auth-client
-    // TODO: POST secrets to he-auth-service REST API and then emit updateStatus for each request.
-    console.log('saving secret');
-    let status = null;
-    cb(new Error('error saving secret: ' + JSON.stringify(secret)), status);
-  }
-
-  updateStatus(token, cb) {
-    // TODO: change to actual response, now forcing to be successful.
-    this.io.emit('updateStatus', token, 'success');
-    cb(new Error('Need to define update status'), null);
-  }
-
-  saveSecrets(secrets, cb) {
-    secrets.forEach(secret => this.saveSecret(secret, cb));
-  }
-
-  saveToken(token, cb) {
-    this.io.emit('newToken', token, cb);
-  }
-
-  // Start collectors
-  collectInterval() {
-    console.log('starting..');
-    if (this.io.connected) {
-      this.collectInterval = setInterval(this.collectSecrets.bind(this)(this.saveSecrets), this.secretCollectionInterval);
-    }
-
-    return true;
-  }
-
-  // Stop collectors
-  stop() {
-    console.log('stopping');
-    clearInterval(this.collectInterval);
-    this.io.socket.disconnect();
-    return true;
+  // Check all collectors running
+  running() {
+    return !!this.collectInterval;
   }
 }
 
