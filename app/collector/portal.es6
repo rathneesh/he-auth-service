@@ -1,4 +1,6 @@
 const socket = require('socket.io-client');
+const noConfigError = require('./errors.es6').noConfigError;
+const missingConfigParam = require('./errors.es6').missingConfigParam;
 
 class IdentityPortal {
   constructor(config) {
@@ -9,14 +11,13 @@ class IdentityPortal {
     //this.clientCreds = config.clientCreds;
 
     if (!this.configOk()) {
-      console.log(config);
       throw missingConfigParam;
     }
 
     this.io = socket(this.endpoint);
 
     this.io.on('connect', () => {
-      console.log('Connected successfully');
+      console.log('Connecting to portal', this.endpoint);
     });
   }
 
@@ -56,6 +57,10 @@ class IdentityPortal {
       });
     }
     cb(null, 'ok')
+  }
+
+  connected() {
+    return this.io.connected;
   }
 }
 

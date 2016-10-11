@@ -1,8 +1,5 @@
 const portal = require('./portal.es6');
 
-const noConfigError = Error("configuration for collector is undefined");
-const missingConfigParam = Error("configuration for collector has missing or invalid parameters");
-
 class Collector {
   constructor(config) {
     if (!config) {
@@ -15,7 +12,6 @@ class Collector {
     this.tokenCollectionInterval = config.tokenCollectionInterval;
     //this.clientCreds = config.clientCreds;
     if (!this.configOk()) {
-      console.log(config);
       throw missingConfigParam;
     }
 
@@ -28,24 +24,11 @@ class Collector {
       this.tokenCollectionInterval !== 0 && !!this.secretCollectionInterval && !!this.tokenCollectionInterval;
   }
 
-  //saveSecret(secret, cb) {
-  //  // TODO: need he-auth-client
-  //  // TODO: POST secrets to he-auth-service REST API and then emit updateStatus for each request.
-  //  console.log('saving secret');
-  //  let status = null;
-  //  cb(new Error('error saving secret: ' + JSON.stringify(secret)), status);
-  //}
-
-  //saveSecrets(secrets, cb) {
-  //  secrets.forEach(secret => this.saveSecret(secret, cb));
-  //}
-
   // Start collectors
   start(cb) {
     let portal = this.portal;
     // Make sure we stop collectors first
     this.stop(() => {
-      console.log('starting..');
       this.collectInterval = setInterval(() => {
         portal.collectSecrets((err, secrets) => {
           if (err) {
@@ -59,7 +42,6 @@ class Collector {
 
   // Stop collectors
   stop(cb) {
-    console.log('stopping');
     if (this.collectInterval)
       clearInterval(this.collectInterval);
     cb(null, 'ok');
