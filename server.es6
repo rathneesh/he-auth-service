@@ -81,11 +81,11 @@ let certificate;
 let passphrase;
 
 try {
-    privateKey  = fs.readFileSync('./key.pem', 'utf8');
-    certificate = fs.readFileSync('./cert.pem', 'utf8');
+    privateKey  = fs.readFileSync('./certs/key.pem', 'utf8');
+    certificate = fs.readFileSync('./certs/cert.pem', 'utf8');
     passphrase = config.get("HE_AUTH_SSL_PASS");
 } catch (err) {
-    log.info("An error occurred while searching for `key.pem` and `cert.pem`. " + err.toString())
+    log.error("An error occurred while searching for `key.pem` and `cert.pem`. " + err.toString())
 }
 
 let credentials = {
@@ -99,7 +99,23 @@ let httpsServer = https.createServer(credentials, app);
 log.info('Express started on port 3000');
 httpsServer.listen(3000);
 
+let keys = {}
+
+try {
+    // Decrypt JWE token with private key
+    keys.jweTokenUrl = fs.readFileSync('./certs/jwe_token_url.pem');
+    // Encrypt JWE with public key
+    keys.jweTokenUrlPub = fs.readFileSync('./certs/jwe_token_url_pub.pem');
+    // Sign JWT token with private key
+    keys.jwtToken = fs.readFileSync('./certs/jwt_token.pem');
+    // JWT public key
+    keys.jwtTokenPub = fs.readFileSync('./certs/jwt_token_pub.pem');
+} catch (err) {
+    log.error("An error occurred while searching for JWT/JWE public and private keys. " + err.toString())
+}
+
 // Export express app for testing
 exports.app = app;
 exports.he_identity_portal_endpoint = config.get("HE_IDENTITY_PORTAL_ENDPOINT");
 exports.vault = myVault;
+exports.keys = keys;

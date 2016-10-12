@@ -2,10 +2,14 @@ let tokenUrl = require('../resources/token_url.es6');
 let tokenUrlResponse = require('../resources/token_url_response.es6');
 let stringsResource = require('../resources/strings.es6');
 let jwt = require('jsonwebtoken');
+let log = require('winston');
 let util = require('util');
 let uuid = require('uuid4');
+let fs = require('fs');
+let jose = require('node-jose');
 let server = require('../../server.es6');
 let urlTokens = require('../models/url_tokens.es6')
+let encrypt = require('./auth/encrypt.es6')
 
 // TODO: assign and store uuid password for each token created
 let secret = uuid();
@@ -50,18 +54,36 @@ let createToken = (req, res) => {
         }
     );
 
-    // Add it to the token bag before sending
-    urlTokens.addToken(token);
-    console.log('has token:');
-    console.log(urlTokens.hasToken(token));    
+    // Sign JWT with private key
+    jwt.sign(payload, server.keys.jwtToken, {algorithm: 'RS256'}, (err, token) => {
+        if (err) {
+            log.error("An error occurred while creating token. " + err.toString())
+            return res.status(500).send({
+                message: 'An error occurred while creating token: ' + err.toString()
+            });
+        }
 
-    return res.status(201).send(
-        tokenUrlResponse(
-            stringsResource.TOKEN_URL_RESPONSE_CREATE_MSG,
-            token,
-            tokenUrl(token)
-        )
-    );
+        // Add it to the token bag before sending
+        urlTokens.addToken(token);
+
+        encrypt.encryptWithKey(server.keys.jweTokenUrlPub, token, (err, encryptedToken) => {
+            if (err) {
+                log.error("An error occurred while encrypting token. " + err.toString())
+                return res.status(500).send({
+                    message: 'An error occurred while encrypting token: ' + err.toString()
+                });
+            }
+
+            res.status(201).send(
+                tokenUrlResponse(
+                    stringsResource.TOKEN_URL_RESPONSE_CREATE_MSG,
+                    encryptedToken,
+                    tokenUrl(encryptedToken)
+                )
+            );
+        });
+
+    });
 };
 
 let validateToken = (req, res) => {
