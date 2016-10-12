@@ -4,13 +4,37 @@
 
 > Clone this repository into your local environment.
 
-### Generate key cert
+### Generate keys
 
-```bash
-    # create certificates in ./certs directory
-    mkdir certs && \
-        openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 9999
-```
+1. Create an `ssl` certificate and key and place them in a directory called `certs`. These will be used by the express server.
+
+  Example:
+
+  ```bash
+  # in certs/ dir
+  openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 9999
+  ```
+
+2. Create key pairs to encrypt / decrypt JWE `token_urls`.
+
+  ```bash
+  # in certs/ dir
+  openssl req -keyform PEM -nodes -newkey rsa:4096 -keyout jwe_token_url.pem -pubkey -out jwe_token_url_pub.pem
+  ```
+
+3. Create key pairs to encrypt / decrypt `secrets` (JWE).
+
+  ```bash
+  # in certs/ dir
+  openssl req -keyform PEM -nodes -newkey rsa:4096 -keyout jwe_secrets.pem -pubkey -out jwe_secrets_pub.pem
+  ```
+
+4. Create key pairs to sign / verify `jwt` tokens.
+
+  ```bash
+  # in certs/ dir
+  openssl req -keyform PEM -nodes -newkey rsa:4096 -keyout jwt_token.pem -pubkey -out jwt_token_pub.pem
+  ```
 
 ### Run with docker-compose
 
