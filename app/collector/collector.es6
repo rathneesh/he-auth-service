@@ -1,4 +1,6 @@
 const portal = require('./portal.es6');
+const noConfigError = require('./errors.es6').noConfigError;
+const missingConfigParam = require('./errors.es6').missingConfigParam;
 
 class Collector {
   constructor(config) {
@@ -10,7 +12,6 @@ class Collector {
     this.datastoreEndpoint = config.datastoreEndpoint;
     this.secretCollectionInterval = config.secretCollectionInterval;
     this.tokenCollectionInterval = config.tokenCollectionInterval;
-    //this.clientCreds = config.clientCreds;
     if (!this.configOk()) {
       throw missingConfigParam;
     }
@@ -19,9 +20,9 @@ class Collector {
   }
 
   configOk() {
-    return !!this.portalEndpoint && !!this.authServiceEndpoint && !!this.datastoreEndpoint &&
+    return Boolean(this.portalEndpoint) && Boolean(this.authServiceEndpoint) && Boolean(this.datastoreEndpoint) &&
       this.secretCollectionInterval !== 0 &&
-      this.tokenCollectionInterval !== 0 && !!this.secretCollectionInterval && !!this.tokenCollectionInterval;
+      this.tokenCollectionInterval !== 0 && Boolean(this.secretCollectionInterval) && Boolean(this.tokenCollectionInterval);
   }
 
   // Start collectors
@@ -50,7 +51,7 @@ class Collector {
   // Disconnect all clients
   disconnect(cb) {
     let portal = this.portal;
-    this.stop((err) => {
+    this.stop(err => {
       if (err) {
         cb(err, null);
       } else {
@@ -62,7 +63,7 @@ class Collector {
 
   // Check all collectors running
   running() {
-    return !!this.collectInterval;
+    return Boolean(this.collectInterval);
   }
 }
 

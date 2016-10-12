@@ -3,7 +3,20 @@ const http = require('http');
 const expect = require('chai').expect;
 const collector = require('../app/collector/collector.es6');
 
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-expressions */
+
 describe('HeCollector', () => {
+  // TODO: refactor and export this utility func
+  let getSecrets = () => {
+    return [
+      {
+        secret: "my_secret",
+        token: 'my_token'
+      }
+    ];
+  };
+
   let config = {
     portalEndpoint: 'ws://localhost:<port>',
     authServiceEndpoint: 'https://localhost:3000',
@@ -17,10 +30,9 @@ describe('HeCollector', () => {
   let io = {};
 
   // TODO: need to generate mock secrets
-  let secrets = [{'secret': "my_secret", 'token': 'my_token'}];
+  let secrets = getSecrets();
 
   before(() => {
-
     let mainRouter = express();
 
     mainRouter.get('/', (req, res) => {
@@ -30,9 +42,10 @@ describe('HeCollector', () => {
     server = http.createServer(mainRouter);
     // TODO: make this port random
     server.listen(0, () => {
-      console.log('Running ws server at localhost:' + server.address().port);
+      let port = server.address().port.toString();
+      console.log('Running ws server at localhost:' + port);
 
-      config.portalEndpoint = config.portalEndpoint.replace('<port>', server.address().port.toString());
+      config.portalEndpoint = config.portalEndpoint.replace('<port>', port);
 
       // Use socket-io for websocket communication
       io = require('socket.io')(server);
@@ -64,10 +77,10 @@ describe('HeCollector', () => {
 
   // Replenish secrets
   beforeEach(() => {
-    secrets = [{'secret': "my_secret", 'token': 'my_token'}];
+    secrets = getSecrets();
   });
 
-  it('should start and stop collector', (done) => {
+  it('should start and stop collector', done => {
     c.start((err, resp) => {
       if (err) {
         done(err);
@@ -93,6 +106,3 @@ describe('HeCollector', () => {
     });
   });
 });
-
-
-

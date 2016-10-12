@@ -8,7 +8,6 @@ class IdentityPortal {
       throw noConfigError;
     }
     this.endpoint = config.endpoint;
-    //this.clientCreds = config.clientCreds;
 
     if (!this.configOk()) {
       throw missingConfigParam;
@@ -22,11 +21,10 @@ class IdentityPortal {
   }
 
   configOk() {
-    return !!this.endpoint;
+    return Boolean(this.endpoint);
   }
 
   collectSecrets(cb) {
-    //console.log('Sending collectSecrets msg');
     this.io.emit('collectSecrets', (err, secrets) => {
       if (err) {
         console.log('there was a server-side error collecting secrets', err);
@@ -56,7 +54,7 @@ class IdentityPortal {
         }
       });
     }
-    cb(null, 'ok')
+    cb(null, 'ok');
   }
 
   connected() {

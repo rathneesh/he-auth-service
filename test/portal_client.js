@@ -4,20 +4,31 @@ const portal = require('../app/collector/portal.es6');
 const expect = require('chai').expect;
 const errors = require('../app/collector/errors.es6');
 
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-expressions */
+
 describe('IdentityPortalClient', () => {
+  let getSecrets = () => {
+    return [
+      {
+        secret: "my_secret",
+        token: 'my_token'
+      }
+    ];
+  };
+
   let config = {
     endpoint: 'ws://localhost:<port>'
   };
 
   // TODO: need to generate mock secrets
-  let secrets = [{'secret': "my_secret", 'token': 'my_token'}];
+  let secrets = getSecrets();
   let server = {};
   let io = {};
   let p = {};
 
-
   // Replenish secrets
-  before(() => {
+  before(done => {
     let mainRouter = express();
 
     mainRouter.get('/', (req, res) => {
@@ -28,8 +39,9 @@ describe('IdentityPortalClient', () => {
 
     // TODO: make this port random
     server.listen(0, () => {
-      console.log('Running ws server at localhost:' + server.address().port);
-      config.endpoint = config.endpoint.replace('<port>', server.address().port.toString());
+      let port = server.address().port.toString();
+      console.log('Running ws server at localhost:' + port);
+      config.endpoint = config.endpoint.replace('<port>', port);
 
       // Use socket-io for websocket communication
       io = require('socket.io')(server);
@@ -54,20 +66,23 @@ describe('IdentityPortalClient', () => {
               return;
           }
         });
+        // Ensure all socket-io listeners are up
+        done();
       });
       p = new portal.IdentityPortal(config);
     });
   });
 
-  beforeEach(() => {
-    secrets = [{'secret': "my_secret", 'token': 'my_token'}];
+  beforeEach(done => {
+    secrets = getSecrets();
+    done();
   });
 
-
-  it('should fail if config is not ok', (done) => {
+  it('should fail if config is not ok', done => {
     try {
-      new portal.IdentityPortal(undefined);
-    } catch(e) {
+      let shouldNotWork = new portal.IdentityPortal(undefined);
+      shouldNotWork.configOk();
+    } catch (e) {
       expect(e).to.be.an('error');
       expect(e).to.equal(errors.noConfigError);
       return done();
@@ -75,10 +90,11 @@ describe('IdentityPortalClient', () => {
     done('Portal did not fail instantiation');
   });
 
-  it('should fail if config is missing endpoint', (done) => {
+  it('should fail if config is missing endpoint', done => {
     try {
-      new portal.IdentityPortal({});
-    } catch(e) {
+      let shouldNotWork = new portal.IdentityPortal({});
+      shouldNotWork.configOk();
+    } catch (e) {
       expect(e).to.be.an('error');
       expect(e).to.equal(errors.missingConfigParam);
       return done();
@@ -91,35 +107,35 @@ describe('IdentityPortalClient', () => {
     expect(p.connected()).to.equal(true);
   });
 
-  it('should collect secrets from portal', (done) => {
+  it('should collect secrets from portal', done => {
     expect(p.collectSecrets(done));
   });
 
-  it('should fail collecting empty secrets payload', (done) => {
+  it('should fail collecting empty secrets payload', done => {
     secrets = [];
-    expect(p.collectSecrets((err, resp) => {
+    expect(p.collectSecrets(err => {
       if (err) {
         done();
       } else done(new Error('No error passed in callback'));
     }));
   });
 
-  it('should update auth success status', (done) => {
+  it('should update auth success status', done => {
     expect(p.updateStatus(secrets.pop().token, "success", done));
   });
 
-  it('should update auth failed status', (done) => {
+  it('should update auth failed status', done => {
     expect(p.updateStatus(secrets.pop().token, "failed", done));
   });
 
-  it('should fail update with unsupported status', (done) => {
+  it('should fail update with unsupported status', done => {
     expect(p.updateStatus(secrets.pop().token, "G@RB@G3", (err, resp) => {
       expect(err).to.exist;
       done();
     }));
   });
 
-  it('should send new tokens in queue', (done) => {
+  it('should send new tokens in queue', done => {
     expect(p.saveToken(secrets.pop().token, done));
   });
 
