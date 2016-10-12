@@ -6,9 +6,12 @@
   "dependencies": {
     "async": "^2.0.1",
     "body-parser": "^1.15.2",
+    "eslint": "^3.7.1",
+    "eslint-config-google": "^0.6.0",
     "express": "^4.14.0",
     "express-validator": "^2.20.8",
     "helmet": "^2.1.2",
+    "jenkins-mocha": "^2.6.0",
     "joi": "^9.0.4",
     "jsonwebtoken": "^7.1.9",
     "mocha": "^3.0.2",
@@ -23,16 +26,18 @@
     "winston": "~2.2.0"
   },
   "devDependencies": {
-    "jshint": "^2.9.2",
+    "eslint": "^3.7.1",
+    "eslint-config-google": "^0.6.0",
     "jenkins-mocha": "^2.6.0"
   },
   "scripts": {
-    "test-packages": "nsp check && mocha test/tests.es6",
     "server": "node server.es6",
     "coffeelint": "return 0",
-    "jslint": "jshint --exclude-path .gitignore --reporter=jslint .> js-lint.xml || true",
-    "test": "ARTIFACTS_DIR='./' COVERAGE_DIR='./' TEST_DIR='./test/' jenkins-mocha --check-leaks --no-coverage test/*.es6 || true"
+    "jslint": "./node_modules/.bin/eslint -o ./test/eslint.xml -f jslint-xml './**/*.es6' './**/*.js'",
+    "eslint": "./node_modules/.bin/eslint './**/*.es6' './**/*.js'",
+    "test": "ARTIFACTS_DIR='./' COVERAGE_DIR='./' TEST_DIR='./test/' ./node_modules/.bin/jenkins-mocha --check-leaks --no-coverage test/*.js",
+    "tdd": "echo '**WARNING**: Please restart after adding new test files' && ./node_modules/.bin/mocha --recursive --watch --growl --check-leaks ./test/*.js"
   },
-  "author": "Jonathan Rosado Lugo",
+  "author": "Hewlett-Packaged Enterprise (HPE)",
   "license": "MIT"
 }
