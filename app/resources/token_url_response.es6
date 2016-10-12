@@ -1,7 +1,7 @@
-module.exports = exports = function(message, token, url) {
-    return {
-        message,
-        token,
-        url
-    }
+module.exports = exports = (message, token, url) => {
+  return {
+    message,
+    token,
+    url
+  };
 };

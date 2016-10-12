@@ -12,25 +12,26 @@ let tokenRoute = require('./app/routes/token_urls.es6');
 let secretsRoute = require('./app/routes/secrets.es6');
 var Vaulted = require('vaulted');
 
+/* eslint-disable camelcase */
+
 // Set configuration hierarchy
 config.argv()
-    .env();
+  .env();
 
 try {
-    // Set required environment variables.
-    config.required([
-        'HE_AUTH_JWT_SECRET',
-        'HE_AUTH_SSL_PASS',
-        'MONGO',
-        'HE_IDENTITY_PORTAL_ENDPOINT',
-        'VAULT_DEV_ROOT_TOKEN_ID'
-    ]);
+  // Set required environment variables.
+  config.required([
+    'HE_AUTH_JWT_SECRET',
+    'HE_AUTH_SSL_PASS',
+    'MONGO',
+    'HE_IDENTITY_PORTAL_ENDPOINT',
+    'VAULT_DEV_ROOT_TOKEN_ID'
+  ]);
 } catch (err) {
-    // Exit if not present.
-    console.log(err.message);
-    process.exit(1);
+  // Exit if not present.
+  console.log(err.message);
+  process.exit(1);
 }
-
 
 // Load express
 let app = express();
@@ -44,18 +45,20 @@ let myVault = new Vaulted({
 });
 
 myVault.prepare()
-  .then(function () {
+  .then(() => {
     console.log('Vault is now ready!');
   });
 
 // Secret for creating and verifying jwts
-app.set('jwt_secret',  config.get("HE_AUTH_JWT_SECRET"));
+app.set('jwt_secret', config.get("HE_AUTH_JWT_SECRET"));
 
 // Secret for creating and verifying jwts
-app.set('jwt_issuer', config.get("HE_AUTH_SERVICE_ISSUER") || stringsResource.DEFAULT_ISSUER);
+app.set('jwt_issuer', config.get("HE_AUTH_SERVICE_ISSUER") ||
+  stringsResource.DEFAULT_ISSUER);
 
 // Secret for creating and verifying jwts
-app.set('jwt_audience', config.get("HE_AUTH_SERVICE_ISSUER") || stringsResource.DEFAULT_AUDIENCE);
+app.set('jwt_audience', config.get("HE_AUTH_SERVICE_ISSUER") ||
+  stringsResource.DEFAULT_AUDIENCE);
 
 // Helmet can help protect your app from some well-known web vulnerabilities by setting HTTP headers appropriately.
 app.use(helmet());
@@ -81,17 +84,18 @@ let certificate;
 let passphrase;
 
 try {
-    privateKey  = fs.readFileSync('./certs/key.pem', 'utf8');
-    certificate = fs.readFileSync('./certs/cert.pem', 'utf8');
-    passphrase = config.get("HE_AUTH_SSL_PASS");
+  privateKey = fs.readFileSync('./certs/key.pem', 'utf8');
+  certificate = fs.readFileSync('./certs/cert.pem', 'utf8');
+  passphrase = config.get("HE_AUTH_SSL_PASS");
 } catch (err) {
-    log.error("An error occurred while searching for `key.pem` and `cert.pem`. " + err.toString())
+  log.error("An error occurred while searching " +
+    "for `key.pem` and `cert.pem`. " + err.toString());
 }
 
 let credentials = {
-    key: privateKey,
-    cert: certificate,
-    passphrase: passphrase
+  key: privateKey,
+  cert: certificate,
+  passphrase: passphrase
 };
 
 let httpsServer = https.createServer(credentials, app);
@@ -99,19 +103,20 @@ let httpsServer = https.createServer(credentials, app);
 log.info('Express started on port 3000');
 httpsServer.listen(3000);
 
-let keys = {}
+let keys = {};
 
 try {
-    // Decrypt JWE token with private key
-    keys.jweTokenUrl = fs.readFileSync('./certs/jwe_token_url.pem');
-    // Encrypt JWE with public key
-    keys.jweTokenUrlPub = fs.readFileSync('./certs/jwe_token_url_pub.pem');
-    // Sign JWT token with private key
-    keys.jwtToken = fs.readFileSync('./certs/jwt_token.pem');
-    // JWT public key
-    keys.jwtTokenPub = fs.readFileSync('./certs/jwt_token_pub.pem');
+  // Decrypt JWE token with private key
+  keys.jweTokenUrl = fs.readFileSync('./certs/jwe_token_url.pem');
+  // Encrypt JWE with public key
+  keys.jweTokenUrlPub = fs.readFileSync('./certs/jwe_token_url_pub.pem');
+  // Sign JWT token with private key
+  keys.jwtToken = fs.readFileSync('./certs/jwt_token.pem');
+  // JWT public key
+  keys.jwtTokenPub = fs.readFileSync('./certs/jwt_token_pub.pem');
 } catch (err) {
-    log.error("An error occurred while searching for JWT/JWE public and private keys. " + err.toString())
+  log.error("An error occurred while searching " +
+    "for JWT/JWE public and private keys. " + err.toString());
 }
 
 // Export express app for testing
