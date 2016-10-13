@@ -42,6 +42,6 @@
     "test": "ARTIFACTS_DIR='./' COVERAGE_DIR='./' TEST_DIR='./test/' ./node_modules/.bin/jenkins-mocha --check-leaks --no-coverage test/*.js",
     "tdd": "echo '**WARNING**: Please restart after adding new test files' && ./node_modules/.bin/mocha --recursive --watch --growl --check-leaks ./test/*.js"
   },
-  "author": "Hewlett-Packaged Enterprise (HPE)",
+  "author": "Hewlett Packard Enterprise (HPE)",
   "license": "MIT"
 }
