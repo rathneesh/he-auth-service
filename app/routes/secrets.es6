@@ -3,6 +3,8 @@ let auth = require('./auth/authenticate.es6');
 let store = require('./auth/store.es6');
 let util = require('util');
 let log = require('winston');
+let encrypt = require('./auth/encrypt.es6');
+let server = require('../../server.es6');
 
 /* eslint-disable camelcase */
 
@@ -27,8 +29,17 @@ let authenticateSecrets = (req, res) => {
     });
   }
 
-  auth.authenticateAgainst(req.body.integration_name.name,
-    req.body.user_info.id, req.body.secrets, (err, success) => {
+  encrypt.decryptWithKey(server.keys.jweTokenUrl, req.body.secrets, (err, decryptedSecrets) => {
+    if (err) {
+      log.error("An error occurred while decrypting " +
+        "secret. " + err.toString());
+      return res.status(500).send({
+        message: 'An error occurred while decrypting ' +
+        'secret. ' + err.toString()
+      });
+    }
+
+    auth.authenticateAgainst(req.body.integration_name.name, req.body.user_info.id, decryptedSecrets, (err, success) => {
       if (err) {
         log.error(
           `Internal server error while authenticating against ${req.body.integration_name.name} as ${req.body.user_info.id} in authenticateSecrets(). Error: ${err}`
@@ -51,7 +62,7 @@ let authenticateSecrets = (req, res) => {
         `Successful authentication against ${req.body.integration_name.name} as ${req.body.user_info.id}`
       );
 
-      return store.storeSecret(req.body.integration_name.name, req.body.user_info.id, req.body.secrets, err => {
+      return store.storeSecret(req.body.integration_name.name, req.body.user_info.id, decryptedSecrets, err => {
         if (err === null) {
           log.info(
             `Credentials have been stored for integration ${req.body.integration_name.name} as ${req.body.user_info.id}`
@@ -71,6 +82,7 @@ let authenticateSecrets = (req, res) => {
         }
       });
     });
+  });
 };
 
 let readSecrets = (req, res) => {
