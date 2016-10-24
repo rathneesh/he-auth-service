@@ -1,16 +1,17 @@
-let express = require('express');
-let https = require('https');
-let fs = require('fs');
-let config = require('nconf');
-let bodyParser = require('body-parser');
-let morgan = require('morgan');
-let log = require('winston');
-let helmet = require('helmet');
-let expressValidator = require('express-validator');
-let stringsResource = require('./app/resources/strings.es6');
-let tokenRoute = require('./app/routes/token_urls.es6');
-let secretsRoute = require('./app/routes/secrets.es6');
-var Vaulted = require('vaulted');
+const express = require('express');
+const https = require('https');
+const fs = require('fs');
+const config = require('nconf');
+const bodyParser = require('body-parser');
+const morgan = require('morgan');
+const log = require('winston');
+const helmet = require('helmet');
+const expressValidator = require('express-validator');
+const stringsResource = require('./app/resources/strings.es6');
+const tokenRoute = require('./app/routes/token_urls.es6');
+const secretsRoute = require('./app/routes/secrets.es6');
+const Vaulted = require('vaulted');
+const collector = require('./app/collector/collector.es6');
 
 /* eslint-disable camelcase */
 
@@ -78,6 +79,24 @@ app.delete('/secrets/:userId/:integrationName', secretsRoute.deleteSecrets);
 app.post('/token_urls', tokenRoute.createToken);
 app.get('/token_urls/:token', tokenRoute.validateToken);
 app.delete('/token_urls/:token', tokenRoute.deleteToken);
+
+// Start collector
+let collectorConfig = {
+  portalEndpoint: `ws://${config.get("HE_IDENTITY_PORTAL_ENDPOINT")}`,
+  authServiceEndpoint: 'https://localhost:3000',
+  datastoreEndpoint: 'redis://localhost:6379',
+  secretCollectionInterval: 300,
+  tokenCollectionInterval: 300
+};
+
+let c = new collector.Collector(collectorConfig);
+c.start((err, resp) => {
+  if (err) {
+    return log.error("An error occurred while starting " +
+      "the collector. " + err.toString());
+  }
+  log.info("Collector is up and running.");
+});
 
 let privateKey;
 let certificate;

@@ -3,7 +3,7 @@ services:
   he-auth-service:
     build: .
     environment:
-      HE_IDENTITY_PORTAL_ENDPOINT: "https://example.com"
+      HE_IDENTITY_PORTAL_ENDPOINT: "example.com"
       HE_AUTH_JWT_SECRET: secret
       MONGO: "mongodb://mongo:27017"
       HE_AUTH_SSL_PASS: default

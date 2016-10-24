@@ -53,9 +53,6 @@ let createToken = (req, res) => {
         });
       }
 
-      // Add it to the token bag before sending
-      urlTokens.addToken(token);
-
       encrypt.encryptWithKey(server.keys.jweTokenUrlPub, token,
         (err, encryptedToken) => {
           if (err) {
@@ -66,6 +63,9 @@ let createToken = (req, res) => {
               'token: ' + err.toString()
             });
           }
+
+          // Add it to the token bag before sending
+          urlTokens.addToken(encryptedToken);
 
           res.status(201).send(
             tokenUrlResponse(
@@ -144,3 +144,4 @@ let deleteToken = (req, res) => {
 exports.createToken = createToken;
 exports.validateToken = validateToken;
 exports.deleteToken = deleteToken;
+exports.secret = secret;

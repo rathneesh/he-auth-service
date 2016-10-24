@@ -3,22 +3,17 @@ let auth = require('./auth/authenticate.es6');
 let store = require('./auth/store.es6');
 let util = require('util');
 let log = require('winston');
+let jwt = require('jsonwebtoken');
 let encrypt = require('./auth/encrypt.es6');
 let server = require('../../server.es6');
 
 /* eslint-disable camelcase */
 
 let authenticateSecrets = (req, res) => {
+  req.checkBody('token',
+    stringsResource.TOKEN_URL_INVALID).notEmpty();
   req.checkBody('secrets',
     stringsResource.SECRETS_ROUTE_INVALID_SECRETS).notEmpty();
-  req.checkBody('user_info',
-    stringsResource.SECRETS_ROUTE_INVALID_USER_INFO).notEmpty();
-  req.checkBody('user_info.id',
-    stringsResource.SECRETS_ROUTE_INVALID_USER_INFO).notEmpty();
-  req.checkBody('integration_name',
-    stringsResource.SECRETS_ROUTE_INVALID_INTEGRATION_NAME).notEmpty();
-  req.checkBody('integration_name.name',
-    stringsResource.SECRETS_ROUTE_INVALID_INTEGRATION_NAME).notEmpty();
 
   // Validate fields. Exit if invalid.
   let errors = req.validationErrors();
@@ -29,57 +24,84 @@ let authenticateSecrets = (req, res) => {
     });
   }
 
-  encrypt.decryptWithKey(server.keys.jweTokenUrl, req.body.secrets, (err, decryptedSecrets) => {
+  encrypt.decryptWithKey(server.keys.jweTokenUrl, req.body.token, (err, decryptedToken) => {
     if (err) {
-      log.error("An error occurred while decrypting " +
-        "secret. " + err.toString());
+      log.error("An error occurred while encrypting " +
+        "token. " + err.toString());
       return res.status(500).send({
-        message: 'An error occurred while decrypting ' +
-        'secret. ' + err.toString()
+        message: 'An error occurred while encrypting ' +
+        'token: ' + err.toString()
       });
     }
 
-    auth.authenticateAgainst(req.body.integration_name.name, req.body.user_info.id, decryptedSecrets, (err, success) => {
+    let tokenString = decryptedToken.payload.toString();
+
+    jwt.verify(tokenString, server.keys.jwtTokenPub, (err, decoded) => {
       if (err) {
-        log.error(
-          `Internal server error while authenticating against ${req.body.integration_name.name} as ${req.body.user_info.id} in authenticateSecrets(). Error: ${err}`
-        );
+        log.error("An error occurred while verifying the " +
+          "token. " + err.toString());
         return res.status(500).send({
-          message: `${stringsResource.SECRETS_SUCCESS_INTERNAL_ERROR_MSG}. ${err}`
+          message: 'An error occurred while encrypting ' +
+          'token: ' + err.toString()
         });
       }
 
-      if (!success) {
-        log.error(
-          `Authentication against ${req.body.integration_name.name} as ${req.body.user_info.id} was not successful in authenticateSecrets()`
-        );
-        return res.status(401).send({
-          message: stringsResource.SECRETS_SUCCESS_UNAUTHORIZED_MSG
-        });
-      }
+      let user_info = decoded.user_info;
+      let integration_name = decoded.integration_info;
 
-      log.info(
-        `Successful authentication against ${req.body.integration_name.name} as ${req.body.user_info.id}`
-      );
-
-      return store.storeSecret(req.body.integration_name.name, req.body.user_info.id, decryptedSecrets, err => {
-        if (err === null) {
-          log.info(
-            `Credentials have been stored for integration ${req.body.integration_name.name} as ${req.body.user_info.id}`
-          );
-          res.status(201).send(
-            {
-              message: stringsResource.SECRETS_SUCCESS_CREATE_MSG
-            }
-          );
-        } else {
-          log.error(
-            `Internal server error while storing credentials for ${req.body.integration_name.name} as ${req.body.user_info.id} in authenticateSecrets(). ${err}`
-          );
-          res.status(500).send({
-            message: `${stringsResource.SECRETS_INTERNAL_ERROR_MSG}. ${err}`
+      encrypt.decryptWithKey(server.keys.jweTokenUrl, req.body.secrets, (err, decryptedSecrets) => {
+        if (err) {
+          log.error("An error occurred while decrypting " +
+            "secret. " + err.toString());
+          return res.status(500).send({
+            message: 'An error occurred while decrypting ' +
+            'secret. ' + err.toString()
           });
         }
+
+        auth.authenticateAgainst(integration_name, user_info, decryptedSecrets, (err, success) => {
+          if (err) {
+            log.error(
+              `Internal server error while authenticating against ${integration_name} as ${user_info} in authenticateSecrets(). Error: ${err}`
+            );
+            return res.status(500).send({
+              message: `${stringsResource.SECRETS_SUCCESS_INTERNAL_ERROR_MSG}. ${err}`
+            });
+          }
+
+          if (!success) {
+            log.error(
+              `Authentication against ${integration_name} as ${user_info} was not successful in authenticateSecrets()`
+            );
+            return res.status(401).send({
+              message: stringsResource.SECRETS_SUCCESS_UNAUTHORIZED_MSG
+            });
+          }
+
+          log.info(
+            `Successful authentication against ${integration_name} as ${user_info}`
+          );
+
+          return store.storeSecret(integration_name, user_info, decryptedSecrets, err => {
+            if (err === null) {
+              log.info(
+                `Credentials have been stored for integration ${integration_name} as ${user_info}`
+              );
+              res.status(201).send(
+                {
+                  message: stringsResource.SECRETS_SUCCESS_CREATE_MSG
+                }
+              );
+            } else {
+              log.error(
+                `Internal server error while storing credentials for ${integration_name} as ${user_info} in authenticateSecrets(). ${err}`
+              );
+              res.status(500).send({
+                message: `${stringsResource.SECRETS_INTERNAL_ERROR_MSG}. ${err}`
+              });
+            }
+          });
+        });
       });
     });
   });
@@ -124,16 +146,10 @@ let deleteSecrets = (req, res) => {
 };
 
 let updateSecrets = (req, res) => {
+  req.checkBody('token',
+    stringsResource.TOKEN_URL_INVALID).notEmpty();
   req.checkBody('secrets',
     stringsResource.SECRETS_ROUTE_INVALID_SECRETS).notEmpty();
-  req.checkBody('user_info',
-    stringsResource.SECRETS_ROUTE_INVALID_USER_INFO).notEmpty();
-  req.checkBody('user_info.id',
-    stringsResource.SECRETS_ROUTE_INVALID_USER_INFO).notEmpty();
-  req.checkBody('integration_name',
-    stringsResource.SECRETS_ROUTE_INVALID_INTEGRATION_NAME).notEmpty();
-  req.checkBody('integration_name.name',
-    stringsResource.SECRETS_ROUTE_INVALID_INTEGRATION_NAME).notEmpty();
 
   // Validate fields. Exit if invalid.
   let errors = req.validationErrors();

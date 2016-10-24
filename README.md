@@ -85,7 +85,7 @@ curl -k https://localhost:8080/token_urls/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e
 #### Secrets post
 
 ```bash
-curl -k -H "Content-Type: application/json" -k -X POST -d '{"secrets": {"password": "xy888z"}, "user_info": {"id": "hello"}, "integration_name": {"name": "efve"} }' https://localhost:8080/secret
+curl -k -H "Content-Type: application/json" -k -X POST -d '{"secrets": {"password": "xy888z"}, "user_info": {"id": "hello"}, "integration_name": {"name": "efve"} }' https://localhost:8080/secrets
 ```
 
 #### Secrets get

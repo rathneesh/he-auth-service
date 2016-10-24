@@ -22,7 +22,6 @@ let decryptWithKey = (pem, payload, cb) => {
 
   keystore.add(pem, "pem", {use: 'enc'}).then(result => {
     let kid = result.kid;
-
     jose.JWE.createDecrypt(keystore.get(kid))
       .decrypt(payload)
       .then(decryptedPayload => {
