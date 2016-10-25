@@ -17,13 +17,14 @@ class SecretsList {
 
   addSecret(id, secret, cb) {
     app.vault.write({body: secret, id})
-      .then(function success() {
+      .then(resp => {
         log.info(`Succesfully wrote secret for ${id}`);
-        cb(null);
+        cb(null, resp);
       })
-      .catch(function failure() {
+      .catch(e => {
         log.info(`Could not write secret for ${id}`);
-        cb(new Error(stringsResource.SECRETS_FAILED_TO_WRITE));
+        log.info(e);
+        cb(new Error(stringsResource.SECRETS_FAILED_TO_WRITE), null);
       });
   }
 

@@ -1,5 +1,5 @@
 let server = require('../../server.es6');
-const tokenSchema = "<he_identity_portal_endpoint>/signin/<jwt_token>";
+const tokenSchema = "<he_identity_portal_endpoint>/portal/<jwt_token>";
 
 module.exports = exports = token => {
   return tokenSchema

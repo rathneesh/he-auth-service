@@ -43,7 +43,12 @@ class IdentityPortal {
   }
 
   saveToken(token, cb) {
-    this.io.emit('newToken', token, cb);
+    this.io.emit('newToken', token, (err, resp) => {
+      if (err) {
+        return cb(err, null);
+      }
+      cb(null, resp);
+    });
   }
 
   disconnect(cb) {

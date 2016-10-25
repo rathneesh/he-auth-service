@@ -7,7 +7,6 @@ const morgan = require('morgan');
 const log = require('winston');
 const helmet = require('helmet');
 const expressValidator = require('express-validator');
-const stringsResource = require('./app/resources/strings.es6');
 const tokenRoute = require('./app/routes/token_urls.es6');
 const secretsRoute = require('./app/routes/secrets.es6');
 const Vaulted = require('vaulted');
@@ -22,11 +21,12 @@ config.argv()
 try {
   // Set required environment variables.
   config.required([
-    'HE_AUTH_JWT_SECRET',
     'HE_AUTH_SSL_PASS',
-    'MONGO',
     'HE_IDENTITY_PORTAL_ENDPOINT',
-    'VAULT_DEV_ROOT_TOKEN_ID'
+    'HE_IDENTITY_WS_ENDPOINT',
+    'VAULT_DEV_ROOT_TOKEN_ID',
+    'HE_ISSUER',
+    'HE_AUDIENCE'
   ]);
 } catch (err) {
   // Exit if not present.
@@ -34,13 +34,16 @@ try {
   process.exit(1);
 }
 
+// default port for API
+const DEFAULT_PORT = 3000;
+
 // Load express
 let app = express();
 
 // Connect to vault
 let myVault = new Vaulted({
-  vault_host: config.get("HE_VAULT_ENDPOINT") || 'vault',
-  vault_port: 8200,
+  vault_host: config.get("HE_VAULT_HOST") || 'vault',
+  vault_port: config.get("HE_VAULT_PORT") || 8200,
   vault_ssl: false,
   vault_token: config.get("VAULT_DEV_ROOT_TOKEN_ID")
 });
@@ -51,15 +54,10 @@ myVault.prepare()
   });
 
 // Secret for creating and verifying jwts
-app.set('jwt_secret', config.get("HE_AUTH_JWT_SECRET"));
+app.set('jwt_issuer', config.get("HE_ISSUER"));
 
 // Secret for creating and verifying jwts
-app.set('jwt_issuer', config.get("HE_AUTH_SERVICE_ISSUER") ||
-  stringsResource.DEFAULT_ISSUER);
-
-// Secret for creating and verifying jwts
-app.set('jwt_audience', config.get("HE_AUTH_SERVICE_ISSUER") ||
-  stringsResource.DEFAULT_AUDIENCE);
+app.set('jwt_audience', config.get("HE_AUDIENCE"));
 
 // Helmet can help protect your app from some well-known web vulnerabilities by setting HTTP headers appropriately.
 app.use(helmet());
@@ -71,23 +69,26 @@ app.use(bodyParser.json());
 // Validate posts
 app.use(expressValidator());
 
+// Secrets API
 app.post('/secrets', secretsRoute.authenticateSecrets);
-app.put('/secrets/:userId/:integrationName', secretsRoute.updateSecrets);
 app.get('/secrets/:userId/:integrationName', secretsRoute.readSecrets);
-app.delete('/secrets/:userId/:integrationName', secretsRoute.deleteSecrets);
 
+// Token_urls API
 app.post('/token_urls', tokenRoute.createToken);
 app.get('/token_urls/:token', tokenRoute.validateToken);
 app.delete('/token_urls/:token', tokenRoute.deleteToken);
 
 // Start collector
+let selfSignedValue = config.get("HE_AUTH_SSL_SELF_SIGNED");
 let collectorConfig = {
-  portalEndpoint: `ws://${config.get("HE_IDENTITY_PORTAL_ENDPOINT")}`,
-  authServiceEndpoint: 'https://localhost:3000',
-  datastoreEndpoint: 'redis://localhost:6379',
-  secretCollectionInterval: 300,
-  tokenCollectionInterval: 300
+  portalEndpoint: `${config.get("HE_IDENTITY_WS_ENDPOINT")}`,
+  authServiceEndpoint: 'https://localhost:' + DEFAULT_PORT,
+  secretCollectionInterval: 3000,
+  tokenCollectionInterval: 3000,
+  selfSignedCerts: selfSignedValue === 'true' || selfSignedValue === 'TRUE'
 };
+
+console.log(collectorConfig);
 
 let c = new collector.Collector(collectorConfig);
 c.start((err, resp) => {
@@ -119,8 +120,8 @@ let credentials = {
 
 let httpsServer = https.createServer(credentials, app);
 
-log.info('Express started on port 3000');
-httpsServer.listen(3000);
+log.info('Express started on port ' + DEFAULT_PORT);
+httpsServer.listen(DEFAULT_PORT);
 
 let keys = {};
 
@@ -129,6 +130,8 @@ try {
   keys.jweTokenUrl = fs.readFileSync('./certs/jwe_token_url.pem');
   // Encrypt JWE with public key
   keys.jweTokenUrlPub = fs.readFileSync('./certs/jwe_token_url_pub.pem');
+  // DecryptSecrets with private key
+  keys.jweSecretsKey = fs.readFileSync('./certs/jwe_secrets.pem');
   // Sign JWT token with private key
   keys.jwtToken = fs.readFileSync('./certs/jwt_token.pem');
   // JWT public key

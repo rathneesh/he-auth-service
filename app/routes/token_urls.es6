@@ -88,7 +88,7 @@ let validateToken = (req, res) => {
           tokenUrlResponse(
             stringsResource.TOKEN_URL_RESPONSE_NOT_FOUND_MSG,
             req.params.token,
-            server.he_identity_portal_endpoint + "/signin/" + req.params.token
+            server.he_identity_portal_endpoint + "/portal/" + req.params.token
           )
         );
       }
@@ -97,7 +97,7 @@ let validateToken = (req, res) => {
           tokenUrlResponse(
             stringsResource.TOKEN_URL_RESPONSE_NOT_FOUND_MSG,
             req.params.token,
-            server.he_identity_portal_endpoint + "/signin/" + req.params.token
+            server.he_identity_portal_endpoint + "/portal/" + req.params.token
           )
         );
       }
@@ -105,7 +105,7 @@ let validateToken = (req, res) => {
         tokenUrlResponse(
           stringsResource.TOKEN_URL_RESPONSE_VERIFY_MSG,
           decoded,
-          server.he_identity_portal_endpoint + "/signin/" + req.params.token
+          server.he_identity_portal_endpoint + "/portal/" + req.params.token
         )
       );
     });
@@ -124,7 +124,7 @@ let deleteToken = (req, res) => {
         tokenUrlResponse(
           stringsResource.TOKEN_URL_RESPONSE_DELETE_MSG,
           token,
-          server.he_identity_portal_endpoint + "/signin/" + token
+          server.he_identity_portal_endpoint + "/portal/" + token
         )
       );
     }

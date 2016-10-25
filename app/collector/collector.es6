@@ -1,3 +1,4 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const portal = require('./portal.es6');
 const noConfigError = require('./errors.es6').noConfigError;
 const missingConfigParam = require('./errors.es6').missingConfigParam;
@@ -6,12 +7,8 @@ const urlTokens = require('../models/url_tokens.es6');
 const log = require('winston');
 
 const statuses = {
-  success: {
-    saveSecrets: "Successfully saved secrets"
-  },
-  failure: {
-    saveSecrets: "Failed to save secrets"
-  }
+  success: 'success',
+  failure: 'failed'
 };
 
 class Collector {
@@ -21,7 +18,6 @@ class Collector {
     }
     this.portalEndpoint = config.portalEndpoint;
     this.authServiceEndpoint = config.authServiceEndpoint;
-    this.datastoreEndpoint = config.datastoreEndpoint;
     this.secretCollectionInterval = config.secretCollectionInterval;
     this.tokenCollectionInterval = config.tokenCollectionInterval;
     if (!this.configOk()) {
@@ -31,11 +27,19 @@ class Collector {
     this.tokenListState = null;
 
     this.portal = new portal.IdentityPortal({endpoint: this.portalEndpoint});
-    this.authService = new authServiceClient.AuthServiceClient({endpoint: this.authServiceEndpoint});
+    let authServiceConfig = {
+      endpoint: this.authServiceEndpoint
+    };
+
+    if (config.selfSignedCerts) {
+      authServiceConfig.selfSignedCerts = true;
+    }
+    this.authService = new authServiceClient.AuthServiceClient(
+      authServiceConfig);
   }
 
   configOk() {
-    return Boolean(this.portalEndpoint) && Boolean(this.authServiceEndpoint) && Boolean(this.datastoreEndpoint) &&
+    return Boolean(this.portalEndpoint) && Boolean(this.authServiceEndpoint) &&
       this.secretCollectionInterval !== 0 &&
       this.tokenCollectionInterval !== 0 && Boolean(this.secretCollectionInterval) && Boolean(this.tokenCollectionInterval);
   }
@@ -49,23 +53,28 @@ class Collector {
         // is `secrets` and incoming secrets array or is it a single secret?
         portal.collectSecrets((err, secrets) => {
           if (err) {
-            return console.log('error in collector (secrets)') &&
-              portal.updateStatus(secrets.token, statuses.failure.saveSecrets, (err, resp) => {
-                if (err) {
-                  log.error("An error occurred while sending update status to portal. " + err.toString());
-                }
-                console.log(resp);
-                console.log("sent failed status");
-              });
+            return console.log('error in collector (secrets)');
           }
-          this.sendToAuthService(secrets.secret, secrets.token, (err, resp) => {
-            portal.updateStatus(secrets.token, statuses.success.saveSecrets, (err, resp) => {
+          console.log('collected', secrets);
+          secrets.forEach(secret => {
+            this.sendToAuthService(secret.secret, secret.token, (err, resp) => {
               if (err) {
-                log.error("An error occurred while sending update status to portal. " + err.toString());
+                console.log('Error posting secrets with token:', secret.token);
+                console.log('error', err);
+                portal.updateStatus(secret.token, statuses.failure, (err, resp) => {
+                  if (err) {
+                    return log.error("An error occurred while sending update status to portal. " + err.toString());
+                  }
+                  console.log('Success in updating status to ' + statuses.failure);
+                });
+              } else {
+                portal.updateStatus(secret.token, statuses.success, (err, resp) => {
+                  if (err) {
+                    return log.error("An error occurred while sending update status to portal. " + err.toString());
+                  }
+                  console.log("sent success status");
+                });
               }
-              console.log(resp);
-              log.info("An error occurred while sending update status to portal. " + err.toString());
-              console.log("sent success status");
             });
           });
         });
@@ -75,17 +84,25 @@ class Collector {
         let state = urlTokens.getState();
 
         let stateHasChanged = (() => {
-          return this.tokenListState === state;
+          return !(this.tokenListState === state);
         })();
+
         // Do we want to send the token that was added or the whole tokens array?
         if (stateHasChanged) {
           let tokens = urlTokens.getTokens();
-          // Wouldn't having urlTokens publish (each time a new token is added) be a better solution?
-          for (let i = 0; i <= tokens.length; i++) {
-            portal.saveToken(tokens[i], (err, resp) => {
-              console.log("sent token to portal");
-            });
+          if (tokens.length > 0) {
+            console.log('Tokens available, collecting tokens');
           }
+          // Wouldn't having urlTokens publish (each time a new token is added) be a better solution?
+          tokens.forEach(token => {
+            portal.saveToken(token, (err, resp) => {
+              if (err) {
+                // TODO: retry tokens that failed to be sent to the portal.
+                return console.log('Error sending token to portal, putting back into list', err);
+              }
+              console.log('Success in sending token', resp);
+            });
+          });
           this.tokenListState = state;
         }
       }, this.tokenCollectionInterval);
@@ -121,9 +138,9 @@ class Collector {
     return Boolean(this.collectSecretsInterval) && Boolean(this.collectTokensInterval);
   }
 
-  sendToAuthService(secret, token, cb) {
+  sendToAuthService(secrets, token, cb) {
     const secretRequest = {
-      secret,
+      secrets,
       token
     };
 

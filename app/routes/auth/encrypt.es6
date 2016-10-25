@@ -11,24 +11,25 @@ let encryptWithKey = (pem, payload, cb) => {
       .then(encryptedPayload => {
         cb(null, encryptedPayload);
       })
-      .error(e => {
-        cb(new Error("JOSE encryption failed"), null);
+      .catch(e => {
+        cb(e, null);
       });
   });
 };
 
 let decryptWithKey = (pem, payload, cb) => {
   let keystore = jose.JWK.createKeyStore();
-
-  keystore.add(pem, "pem", {use: 'enc'}).then(result => {
-    let kid = result.kid;
-    jose.JWE.createDecrypt(keystore.get(kid))
+  console.log(pem);
+  /* eslint-disable camelcase */
+  keystore.add(pem, "pem", {key_opts: 'decrypt'}).then(key => {
+    console.log(key);
+    jose.JWE.createDecrypt(key)
       .decrypt(payload)
       .then(decryptedPayload => {
         cb(null, decryptedPayload);
       })
-      .error(e => {
-        cb(new Error("JOSE decryption failed"), null);
+      .catch(e => {
+        cb(e, null);
       });
   });
 };

@@ -1,3 +1,4 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const request = require('request');
 const _ = require('lodash');
 const UNEXPECTED_STATUS_CODE = 'Unexpected status code == ';
@@ -25,6 +26,10 @@ class AuthServiceClient {
       'Content-Type': 'application/json'
     };
     this.pathFormat = '/secrets/<user>/<integration>';
+
+    if (config.selfSignedCerts) {
+      console.log('Using self signed config');
+    }
   }
 
   trimEndpoint() {

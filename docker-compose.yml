@@ -3,11 +3,12 @@ services:
   he-auth-service:
     build: .
     environment:
-      HE_IDENTITY_PORTAL_ENDPOINT: "example.com"
-      HE_AUTH_JWT_SECRET: secret
-      MONGO: "mongodb://mongo:27017"
-      HE_AUTH_SSL_PASS: default
-      VAULT_DEV_ROOT_TOKEN_ID: myroot
+      HE_ISSUER:
+      HE_AUDIENCE:
+      HE_AUTH_SSL_PASS:
+      VAULT_DEV_ROOT_TOKEN_ID:
+      HE_IDENTITY_PORTAL_ENDPOINT:
+      HE_IDENTITY_WS_ENDPOINT:
     ports:
       - "8080:3000"
     depends_on:
@@ -17,6 +18,6 @@ services:
   vault:
     image: vault:0.6.1
     environment:
-      VAULT_DEV_ROOT_TOKEN_ID: myroot
+      VAULT_DEV_ROOT_TOKEN_ID:
       # need to bind to 0.0.0.0 so that it accepts remote connections (!localhost)
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
