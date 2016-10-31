@@ -1,5 +1,6 @@
-const assert = require('assert');
 const request = require('supertest')(require('../server.es6').app);
+
+/* eslint-disable no-undef */
 
 describe('Auth Service integration tests', function() {
   describe('Token enpoints', function() {
