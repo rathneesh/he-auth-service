@@ -78,44 +78,6 @@ let createToken = (req, res) => {
     });
 };
 
-let validateToken = (req, res) => {
-  console.log('has token:');
-  console.log(urlTokens.hasToken(req.params.token));
-  if (req.params.token && urlTokens.hasToken(req.params.token)) {
-    jwt.verify(req.params.token, secret, (err, decoded) => {
-      if (err) {
-        return res.status(404).send(
-          tokenUrlResponse(
-            stringsResource.TOKEN_URL_RESPONSE_NOT_FOUND_MSG,
-            req.params.token,
-            server.he_identity_portal_endpoint + "/portal/" + req.params.token
-          )
-        );
-      }
-      if (decoded.exp < (Date.now() / 1000)) {
-        return res.status(404).send(
-          tokenUrlResponse(
-            stringsResource.TOKEN_URL_RESPONSE_NOT_FOUND_MSG,
-            req.params.token,
-            server.he_identity_portal_endpoint + "/portal/" + req.params.token
-          )
-        );
-      }
-      return res.status(200).send(
-        tokenUrlResponse(
-          stringsResource.TOKEN_URL_RESPONSE_VERIFY_MSG,
-          decoded,
-          server.he_identity_portal_endpoint + "/portal/" + req.params.token
-        )
-      );
-    });
-  } else {
-    return res.status(404).send({
-      message: stringsResource.TOKEN_URL_RESPONSE_NOT_FOUND_MSG
-    });
-  }
-};
-
 let deleteToken = (req, res) => {
   let token = req.params.token;
   if (token && urlTokens.hasToken(token)) {
@@ -142,6 +104,5 @@ let deleteToken = (req, res) => {
 };
 
 exports.createToken = createToken;
-exports.validateToken = validateToken;
 exports.deleteToken = deleteToken;
 exports.secret = secret;

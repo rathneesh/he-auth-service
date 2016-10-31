@@ -75,7 +75,6 @@ app.get('/secrets/:userId/:integrationName', secretsRoute.readSecrets);
 
 // Token_urls API
 app.post('/token_urls', tokenRoute.createToken);
-app.get('/token_urls/:token', tokenRoute.validateToken);
 app.delete('/token_urls/:token', tokenRoute.deleteToken);
 
 // Start collector
