@@ -28,7 +28,6 @@
     "supertest": "^2.0.0",
     "uuid4": "^1.0.0",
     "vaulted": "3.1.0",
-    "node-jose": "^0.9.1",
     "winston": "~2.2.0"
   },
   "devDependencies": {
@@ -36,7 +35,8 @@
     "eslint": "^3.7.1",
     "eslint-config-google": "^0.6.0",
     "jenkins-mocha": "^2.6.0",
-    "mocha": "^3.1.2"
+    "mocha": "^3.1.2",
+    "supertest": "^2.0.1"
   },
   "scripts": {
     "server": "node server.es6",
@@ -44,7 +44,8 @@
     "jslint": "./node_modules/.bin/eslint -o ./test/eslint.xml -f jslint-xml './**/*.es6' './**/*.js'",
     "eslint": "./node_modules/.bin/eslint './**/*.es6' './**/*.js'",
     "test": "ARTIFACTS_DIR='./' COVERAGE_DIR='./' TEST_DIR='./test/' ./node_modules/.bin/jenkins-mocha --check-leaks --no-coverage test/*.js",
-    "tdd": "echo '**WARNING**: Please restart after adding new test files' && ./node_modules/.bin/mocha --recursive --watch --growl --check-leaks ./test/*.js"
+    "tdd": "echo '**WARNING**: Please restart after adding new test files' && ./node_modules/.bin/mocha --recursive --watch --growl --check-leaks ./test/*.js",
+    "integration": "./integration/integration.sh"
   },
   "author": "Hewlett Packard Enterprise (HPE)",
   "license": "MIT"

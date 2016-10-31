@@ -3,12 +3,12 @@ services:
   he-auth-service:
     build: .
     environment:
-      HE_ISSUER:
-      HE_AUDIENCE:
-      HE_AUTH_SSL_PASS:
-      VAULT_DEV_ROOT_TOKEN_ID:
-      HE_IDENTITY_PORTAL_ENDPOINT:
-      HE_IDENTITY_WS_ENDPOINT:
+      HE_ISSUER: "issuer"
+      HE_AUDIENCE: "audience"
+      HE_AUTH_SSL_PASS: "default"
+      VAULT_DEV_ROOT_TOKEN_ID: "default"
+      HE_IDENTITY_PORTAL_ENDPOINT: "http://example"
+      HE_IDENTITY_WS_ENDPOINT: "http://asxax"
     ports:
       - "8080:3000"
     depends_on:

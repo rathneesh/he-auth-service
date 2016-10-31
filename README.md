@@ -105,3 +105,9 @@ curl -k -H "Content-Type: application/json" -X DELETE https://localhost:8080/sec
 ```bash
 curl -k -H "Content-Type: application/json" -X DELETE https://localhost:8080/secrets/hello/efve
 ```
+
+### Running the integration tests
+
+```bash
+sudo npm run integration # Make sure you have Docker running in your environment
+```
