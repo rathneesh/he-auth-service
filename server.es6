@@ -26,7 +26,7 @@ const fs = require('fs');
 const config = require('nconf');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
-const log = require('winston');
+const log = require('./app/resources/fluentd.es6');
 const helmet = require('helmet');
 const expressValidator = require('express-validator');
 const tokenRoute = require('./app/routes/token_urls.es6');
@@ -52,7 +52,7 @@ try {
   ]);
 } catch (err) {
   // Exit if not present.
-  console.log(err.message);
+  log.error(err.message);
   process.exit(1);
 }
 
@@ -72,7 +72,7 @@ let myVault = new Vaulted({
 
 myVault.prepare()
   .then(() => {
-    console.log('Vault is now ready!');
+    log.debug('Vault is now ready!');
   });
 
 // Secret for creating and verifying jwts
@@ -108,8 +108,6 @@ let collectorConfig = {
   tokenCollectionInterval: 3000,
   selfSignedCerts: selfSignedValue === 'true' || selfSignedValue === 'TRUE'
 };
-
-console.log(collectorConfig);
 
 let c = new collector.Collector(collectorConfig);
 c.start((err, resp) => {

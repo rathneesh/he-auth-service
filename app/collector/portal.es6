@@ -23,6 +23,7 @@
 const socket = require('socket.io-client');
 const noConfigError = require('./errors.es6').noConfigError;
 const missingConfigParam = require('./errors.es6').missingConfigParam;
+const log = require('./../resources/fluentd.es6');
 
 class IdentityPortal {
   constructor(config) {
@@ -38,7 +39,7 @@ class IdentityPortal {
     this.io = socket(this.endpoint);
 
     this.io.on('connect', () => {
-      console.log('Connecting to portal', this.endpoint);
+      log.info('Connecting to portal', this.endpoint);
     });
   }
 
@@ -49,7 +50,7 @@ class IdentityPortal {
   collectSecrets(cb) {
     this.io.emit('collectSecrets', (err, secrets) => {
       if (err) {
-        console.log('there was a server-side error collecting secrets', err);
+        log.error('there was a server-side error collecting secrets', err);
         return cb(err, null);
       }
       if (secrets && secrets.length > 0) {

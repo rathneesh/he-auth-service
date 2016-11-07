@@ -29,6 +29,7 @@ const UNEXPECTED_STATUS_CODE = 'Unexpected status code == ';
 const MALFORMED_RESPONSE = 'Response malformed ';
 const MALFORMED_REQUEST = 'Request / opts malformed';
 const EMPTY_PARAMETER = 'Empty parameter';
+const log = require('./../resources/fluentd.es6');
 
 /* eslint-disable camelcase */
 
@@ -52,7 +53,7 @@ class AuthServiceClient {
     this.pathFormat = '/secrets/<user>/<integration>';
 
     if (config.selfSignedCerts) {
-      console.log('Using self signed config');
+      log.warn('Using self signed config');
     }
   }
 

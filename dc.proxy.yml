@@ -20,14 +20,26 @@
 #
 # END OF TERMS AND CONDITIONS
 
-FROM node:6.4
-
-ADD . /usr/src/app
-
-WORKDIR /usr/src/app
-
-RUN npm install
-
-EXPOSE 3000
-
-CMD ["npm", "start"]
+version: '2'
+services:
+  he-auth-service:
+    build: .
+      context: .
+      args:
+        - http_proxy=$http_proxy
+        - https_proxy=$https_proxy
+        - ftp_proxy=$ftp_proxy
+        - no_proxy=$no_proxy
+        - HTTP_PROXY=$HTTP_PROXY
+        - HTTPS_PROXY=$HTTPS_PROXY
+        - FTP_PROXY=$FTP_PROXY
+        - NO_PROXY=$NO_PROXY
+    environment:
+        - http_proxy=$http_proxy
+        - https_proxy=$https_proxy
+        - ftp_proxy=$ftp_proxy
+        - no_proxy=${no_proxy},vault
+        - HTTP_PROXY=$HTTP_PROXY
+        - HTTPS_PROXY=$HTTPS_PROXY
+        - FTP_PROXY=$FTP_PROXY
+        - NO_PROXY=${NO_PROXY},vault

@@ -24,7 +24,7 @@ let stringsResource = require('../resources/strings.es6');
 let auth = require('./auth/authenticate.es6');
 let store = require('./auth/store.es6');
 let util = require('util');
-let log = require('winston');
+let log = require('../resources/fluentd.es6');
 let jwt = require('jsonwebtoken');
 let encrypt = require('./auth/encrypt.es6');
 let server = require('../../server.es6');
@@ -58,8 +58,6 @@ let authenticateSecrets = (req, res) => {
     }
 
     let tokenString = decryptedToken.payload.toString();
-
-    console.log(tokenString);
 
     jwt.verify(tokenString, server.keys.jwtTokenPub, (err, decoded) => {
       if (err) {

@@ -44,6 +44,16 @@ docker-compose up --build
 
 # Or to just run (with local built image):
 docker-compose up
+
+# Add dc.proxy.yml if you are running within environment with http_proxy
+docker-compose -f docker-compose.yml -f dc.proxy.yml up
+
+# Add dc.dev.yml if you want to mount the current source code for development
+# (instead of local built image)
+docker-compose -f docker-compose.yml -f dc.dev.yml up
+
+# Develop under http_proxy environment
+docker-compose -f docker-compose.yml -f dc.proxy.yml -f dc.dev.yml up
 ```
 
 > Your `he-auth-service` will be available on `localhost:8080`.
@@ -105,6 +115,11 @@ curl -k -H "Content-Type: application/json" -X DELETE https://localhost:8080/sec
 ```bash
 curl -k -H "Content-Type: application/json" -X DELETE https://localhost:8080/secrets/hello/efve
 ```
+
+## Log Services
+This version includes the flexibility of sending your logs to fluentd instead of the console.
+
+In the included docker-compose file the variables `FLUENTD_HOST` and `FLUENTD_PORT` need to be set in order to have your logs sent to fluentd. If either variable is not set, the logs will be sent to `stdout` as normal.
 
 ## License
 

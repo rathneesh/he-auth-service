@@ -62,7 +62,6 @@ describe('IdentityPortalClient', () => {
     // TODO: make this port random
     server.listen(0, () => {
       let port = server.address().port.toString();
-      console.log('Running ws server at localhost:' + port);
       config.endpoint = config.endpoint.replace('<port>', port);
 
       // Use socket-io for websocket communication

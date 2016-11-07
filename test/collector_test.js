@@ -65,7 +65,6 @@ describe('HeCollector', () => {
     // TODO: make this port random
     server.listen(0, () => {
       let port = server.address().port.toString();
-      console.log('Running ws server at localhost:' + port);
 
       config.portalEndpoint = config.portalEndpoint.replace('<port>', port);
 

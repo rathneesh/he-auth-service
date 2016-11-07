@@ -20,39 +20,42 @@
 //
 // END OF TERMS AND CONDITIONS
 
-let jose = require('node-jose');
+if (process.env.FLUENTD_HOST && process.env.FLUENTD_PORT) {
+  let fluent = require('fluent-logger');
 
-let encryptWithKey = (pem, payload, cb) => {
-  let keystore = jose.JWK.createKeyStore();
-
-  keystore.add(pem, "pem", {use: 'enc'}).then(result => {
-    let kid = result.kid;
-
-    jose.JWE.createEncrypt({format: 'compact'}, keystore.get(kid))
-      .update(payload).final()
-      .then(encryptedPayload => {
-        cb(null, encryptedPayload);
-      })
-      .catch(e => {
-        cb(e, null);
-      });
+  fluent.configure('authService', {
+    host: process.env.FLUENTD_HOST,
+    port: process.env.FLUENTD_PORT,
+    timeout: 3.0,
+    reconnectInterval: 600000 // 10 minutes
   });
-};
 
-let decryptWithKey = (pem, payload, cb) => {
-  let keystore = jose.JWK.createKeyStore();
-  /* eslint-disable camelcase */
-  keystore.add(pem, "pem", {key_opts: 'decrypt'}).then(key => {
-    jose.JWE.createDecrypt(key)
-      .decrypt(payload)
-      .then(decryptedPayload => {
-        cb(null, decryptedPayload);
-      })
-      .catch(e => {
-        cb(e, null);
-      });
-  });
-};
+  let log = {};
+  log.info = function(string) {
+    fluent.emit('Info', {message: string});
+  };
 
-exports.encryptWithKey = encryptWithKey;
-exports.decryptWithKey = decryptWithKey;
+  log.debug = function(string) {
+    fluent.emit('Debug', {message: string});
+  };
+
+  log.error = function(string) {
+    fluent.emit('Error', {message: string});
+  };
+
+  log.warn = function(string) {
+    fluent.emit('Warning', {message: string});
+  };
+
+  log.warning = function(string) {
+    fluent.emit('Warning', {message: string});
+  };
+
+  exports.info = log.info;
+  exports.debug = log.debug;
+  exports.error = log.error;
+  exports.warn = log.warn;
+  exports.warning = log.warning;
+} else {
+  module.exports = exports = require('winston');
+}

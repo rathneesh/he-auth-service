@@ -21,6 +21,7 @@
 // END OF TERMS AND CONDITIONS
 
 let secretsModel = require('../../models/secrets.es6');
+const log = require('./../../resources/fluentd.es6');
 
 let storeSecret = (integration, user, secrets, cb) => {
   // TODO: add validation of inputs
@@ -36,7 +37,7 @@ let storeSecret = (integration, user, secrets, cb) => {
     secrets: secrets
   };
 
-  console.log('Saving secrets', payload);
+  log.debug('Saving secrets', payload);
   // TODO: modify secrets depending on auth method. For basic auth use base64
   secretsModel.addSecret(`${user.id}/${integration.name}`, payload, (err, resp) => {
     if (err) {

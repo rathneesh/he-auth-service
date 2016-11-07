@@ -26,8 +26,7 @@ const noConfigError = require('./errors.es6').noConfigError;
 const missingConfigParam = require('./errors.es6').missingConfigParam;
 const authServiceClient = require('../client/client_lib.es6');
 const urlTokens = require('../models/url_tokens.es6');
-const log = require('winston');
-
+const log = require('../resources/fluentd.es6');
 const statuses = {
   success: 'success',
   failure: 'failed'
@@ -75,26 +74,25 @@ class Collector {
         // is `secrets` and incoming secrets array or is it a single secret?
         portal.collectSecrets((err, secrets) => {
           if (err) {
-            return console.log('error in collector (secrets)');
+            return log.error('error in collector (secrets)');
           }
-          console.log('collected', secrets);
+          log.info('collected', secrets);
           secrets.forEach(secret => {
             this.sendToAuthService(secret.secret, secret.token, (err, resp) => {
               if (err) {
-                console.log('Error posting secrets with token:', secret.token);
-                console.log('error', err);
+                log.error('Error posting secrets with token:', secret.token, err);
                 portal.updateStatus(secret.token, statuses.failure, (err, resp) => {
                   if (err) {
                     return log.error("An error occurred while sending update status to portal. " + err.toString());
                   }
-                  console.log('Success in updating status to ' + statuses.failure);
+                  log.debug('Success in updating status to ' + statuses.failure);
                 });
               } else {
                 portal.updateStatus(secret.token, statuses.success, (err, resp) => {
                   if (err) {
                     return log.error("An error occurred while sending update status to portal. " + err.toString());
                   }
-                  console.log("sent success status");
+                  log.debug("sent success status");
                 });
               }
             });
@@ -113,16 +111,16 @@ class Collector {
         if (stateHasChanged) {
           let tokens = urlTokens.getTokens();
           if (tokens.length > 0) {
-            console.log('Tokens available, collecting tokens');
+            log.info('Tokens available, collecting tokens');
           }
           // Wouldn't having urlTokens publish (each time a new token is added) be a better solution?
           tokens.forEach(token => {
             portal.saveToken(token, (err, resp) => {
               if (err) {
                 // TODO: retry tokens that failed to be sent to the portal.
-                return console.log('Error sending token to portal, putting back into list', err);
+                return log.error('Error sending token to portal, putting back into list', err);
               }
-              console.log('Success in sending token', resp);
+              log.debug('Success in sending token', resp);
             });
           });
           this.tokenListState = state;
