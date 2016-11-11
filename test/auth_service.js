@@ -49,7 +49,7 @@ process.env.HE_AUTH_SSL_CERT = "./test/assets/cert.pem";
 
 if (process.env.HTTP_PROXY || process.env.http_proxy) {
   process.env.NO_PROXY = process.env.NO_PROXY ? process.env.NO_PROXY + ',vault' : 'vault';
-  process.env.NO_PROXY = process.env.no_proxy ? process.env.no_proxy + ',vault' : 'vault';
+  process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',vault' : 'vault';
 }
 
 nock('http://vault:8200', {"encodedQueryParams": true})
