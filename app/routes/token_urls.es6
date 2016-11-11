@@ -38,6 +38,8 @@ let secret = uuid();
 let createToken = (req, res) => {
   req.checkBody('user_info', 'Invalid user_info').notEmpty();
   req.checkBody('integration_info', 'Invalid integration_info').notEmpty();
+  req.checkBody('integration_info.name', 'Invalid integration_info').notEmpty();
+  req.checkBody('integration_info.auth', 'Invalid integration_info').notEmpty();
   req.checkBody('bot_info', 'Invalid bot_info').notEmpty();
   req.checkBody('url_props', 'Invalid url_props').notEmpty();
   req.checkBody('url_props.ttl', 'Invalid url_props.ttl').notEmpty().isInt();

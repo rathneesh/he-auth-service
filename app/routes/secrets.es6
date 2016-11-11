@@ -40,7 +40,7 @@ let authenticateSecrets = (req, res) => {
   // Validate fields. Exit if invalid.
   let errors = req.validationErrors();
   if (errors) {
-    log.error("Validation errors detected in authenticateSecrets()");
+    log.error("Validation errors detected in authenticateSecrets()" + util.inspect(errors));
     return res.status(500).send({
       message: 'There have been validation errors: ' + util.inspect(errors)
     });
@@ -71,7 +71,6 @@ let authenticateSecrets = (req, res) => {
 
       let user_info = decoded.user_info;
       let integration_name = decoded.integration_info;
-
       encrypt.decryptWithKey(server.keys.jweSecretsKey, req.body.secrets, (err, decryptedSecrets) => {
         if (err) {
           log.error("An error occurred while decrypting " +
@@ -82,16 +81,16 @@ let authenticateSecrets = (req, res) => {
           });
         }
 
-        auth.authenticateAgainst(integration_name, user_info, decryptedSecrets, (err, success) => {
-          let decryptedSecretsObj;
-          try {
-            decryptedSecretsObj = JSON.parse(decryptedSecrets.payload.toString());
-          } catch (e) {
-            return res.status(500).send({
-              message: e.toString()
-            });
-          }
+        let decryptedSecretsObj;
+        try {
+          decryptedSecretsObj = JSON.parse(decryptedSecrets.payload.toString());
+        } catch (e) {
+          return res.status(500).send({
+            message: e.toString()
+          });
+        }
 
+        auth.authenticateAgainst(integration_name, user_info, decryptedSecretsObj, (err, success) => {
           if (err) {
             log.error(
               `Internal server error while authenticating against ${integration_name} as ${user_info} in authenticateSecrets(). Error: ${err}`

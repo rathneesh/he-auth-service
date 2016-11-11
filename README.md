@@ -41,7 +41,7 @@
 ```bash
 # To build and run:
 docker-compose up --build
-
+ 
 # Or to just run (with local built image):
 docker-compose up
 
@@ -61,15 +61,18 @@ docker-compose -f docker-compose.yml -f dc.proxy.yml -f dc.dev.yml up
 ## API Usage
 
 ### `token_url` actions
-
-#### Create
+ 
+#### Create a JWE encypted token
 
 ```bash
 
 # Create token_url that expires in 5 minutes
-curl -H "Content-Type: application/json" \
-    -X POST \
-    -d '{"user_info":"xyz","integration_info":"xyz","bot_info":"xyz","url_props": {"ttl": 300}}' \
+curl \
+    -H "Content-Type: application/json" \
+    -X POST -d '{"user_info":{"id":"USERID"},
+    "integration_info":{"name":"INTEGRATION_NAME", 
+    "auth": "AUTH"},"bot_info":"bot info",
+    "url_props": {"ttl": 300}}' \ 
     -k https://localhost:8080/token_urls
 
 ```
@@ -86,41 +89,49 @@ Sample Response:
 
 #### Get
 
-> Use the endpoint of the `he-auth-service` and append the `token` value from above to get the infor.
+> Use the endpoint of the `he-auth-service` and append the `token` value from above to get the information. 
 
 ```bash
-curl -k https://localhost:8080/token_urls/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIRV9ERUZBVUxUX0lTU1VFUiIsImF1ZCI6WyJIRV9ERUZBVUxUX0FVRElFTkNFIl0sImlhdCI6MTQ3NDczNDM3My43NjksImp0aSI6IjRiYjllNTIyLThmZjYtNGZmYS1iYzU2LTg0ZmU2NTZjYzQ2ZCIsImJvdF9pbmZvIjoieHl6IiwidXNlcl9pbmZvIjoieHl6IiwiaW50ZWdyYXRpb25faW5mbyI6Inh5eiIsImV4cCI6MTQ3NDczNDM3OC43Njl9.mD-iKAj5CfnT0215oi3W8wrXaLORKk-SApAFreC_B00
+curl -k  \
+  https://localhost:8080/token_urls/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
+  eyJpc3MiOiJIRV9ERUZBVUxUX0lTU1VFUiIsImF1ZCI6WyJIRV9ERUZBVUxUX0FVRElFTkN
+  FIl0sImlhdCI6MTQ3NDczNDM3My43NjksImp0aSI6IjRiYjllNTIyLThmZjYtNGZmYS1iYz
+  U2LTg0ZmU2NTZjYzQ2ZCIsImJvdF9pbmZvIjoieHl6IiwidXNlcl9pbmZvIjoieHl6Iiwia
+  W50ZWdyYXRpb25faW5mbyI6Inh5eiIsImV4cCI6MTQ3NDczNDM3OC43Njl9.mD-iKAj5Cfn
+  T0215oi3W8wrXaLORKk-SApAFreC_B00
 ```
 
 #### Secrets post
 
 ```bash
-curl -k -H "Content-Type: application/json" -k -X POST -d '{"secrets": {"password": "xy888z"}, "user_info": {"id": "hello"}, "integration_name": {"name": "efve"} }' https://localhost:8080/secrets
+SECRETS=<JWE encrypted JSON>
+TOKEN=<JWE encrypted token>
+curl -k -H "Content-Type: application/json" \
+  -X POST -d "{\"secrets\": \"\", \"token\": \"\" }" \
+  https://localhost:8080/secrets
 ```
+
+> `secrets` should contain a JWE encrypted json.
+
+> `token` should contain a valid JWE encrypted token.
 
 #### Secrets get
 
 ```bash
-curl -k -H "Content-Type: application/json" https://localhost:8080/secrets/hello/efve
+curl -k -H "Content-Type: application/json" \
+  https://localhost:8080/secrets/hello/efve
 ```
 
 #### Secrets delete
 
 ```bash
-curl -k -H "Content-Type: application/json" -X DELETE https://localhost:8080/secrets/hello/efve
+curl -k -H "Content-Type: application/json" \
+  -X DELETE https://localhost:8080/secrets/hello/efve
 ```
 
 #### Secrets put
 
 ```bash
-curl -k -H "Content-Type: application/json" -X DELETE https://localhost:8080/secrets/hello/efve
+curl -k -H "Content-Type: application/json" \
+  -X DELETE https://localhost:8080/secrets/hello/efve
 ```
-
-## Log Services
-This version includes the flexibility of sending your logs to fluentd instead of the console.
-
-In the included docker-compose file the variables `FLUENTD_HOST` and `FLUENTD_PORT` need to be set in order to have your logs sent to fluentd. If either variable is not set, the logs will be sent to `stdout` as normal.
-
-## License
-
-[The MIT License](/LICENSE) 

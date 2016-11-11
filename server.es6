@@ -57,7 +57,10 @@ try {
 }
 
 // default port for API
-const DEFAULT_PORT = 3000;
+const DEFAULT_PORT = config.get("HE_AUTH_SERVICE_PORT") || 3000;
+
+// toggle for collector
+const RUN_COLLECTOR = config.get("HE_RUN_COLLECTOR") === "true";
 
 // Load express
 let app = express();
@@ -72,8 +75,41 @@ let myVault = new Vaulted({
 
 myVault.prepare()
   .then(() => {
-    log.debug('Vault is now ready!');
+    log.info('Vault is now ready!');
+  })
+  .catch(e => {
+    log.error(e);
+    process.exit(1);
   });
+
+let keys = {};
+
+try {
+  // Decrypt JWE token with private key
+  keys.jweTokenUrl = fs.readFileSync(
+    config.get("JWE_TOKEN_URL_PATH") || './certs/jwe_token_url.pem'
+  );
+  // Encrypt JWE with public key
+  keys.jweTokenUrlPub = fs.readFileSync(
+    config.get("JWE_TOKEN_URL_PATH_PUB") || './certs/jwe_token_url_pub.pem'
+  );
+  // DecryptSecrets with private key
+  keys.jweSecretsKey = fs.readFileSync(
+    config.get("JWE_SECRETS_PATH") || './certs/jwe_secrets.pem'
+  );
+  // Sign JWT token with private key
+  keys.jwtToken = fs.readFileSync(
+    config.get("JWT_TOKEN_PATH") || './certs/jwt_token.pem'
+  );
+  // JWT public key
+  keys.jwtTokenPub = fs.readFileSync(
+    config.get("JWT_TOKEN_PATH_PUB") || './certs/jwt_token_pub.pem'
+  );
+} catch (err) {
+  log.error("An error occurred while searching " +
+    "for JWT/JWE public and private keys. " + err.toString());
+  process.exit(2);
+}
 
 // Secret for creating and verifying jwts
 app.set('jwt_issuer', config.get("HE_ISSUER"));
@@ -100,35 +136,38 @@ app.post('/token_urls', tokenRoute.createToken);
 app.delete('/token_urls/:token', tokenRoute.deleteToken);
 
 // Start collector
-let selfSignedValue = config.get("HE_AUTH_SSL_SELF_SIGNED");
-let collectorConfig = {
-  portalEndpoint: `${config.get("HE_IDENTITY_WS_ENDPOINT")}`,
-  authServiceEndpoint: 'https://localhost:' + DEFAULT_PORT,
-  secretCollectionInterval: 3000,
-  tokenCollectionInterval: 3000,
-  selfSignedCerts: selfSignedValue === 'true' || selfSignedValue === 'TRUE'
-};
+if (RUN_COLLECTOR) {
+  let selfSignedValue = config.get("HE_AUTH_SSL_SELF_SIGNED");
+  let collectorConfig = {
+    portalEndpoint: `${config.get("HE_IDENTITY_WS_ENDPOINT")}`,
+    authServiceEndpoint: 'https://localhost:' + DEFAULT_PORT,
+    secretCollectionInterval: 3000,
+    tokenCollectionInterval: 3000,
+    selfSignedCerts: selfSignedValue === 'true' || selfSignedValue === 'TRUE'
+  };
 
-let c = new collector.Collector(collectorConfig);
-c.start((err, resp) => {
-  if (err) {
-    return log.error("An error occurred while starting " +
-      "the collector. " + err.toString());
-  }
-  log.info("Collector is up and running.");
-});
+  let c = new collector.Collector(collectorConfig);
+  c.start((err, resp) => {
+    if (err) {
+      return log.error("An error occurred while starting " +
+        "the collector. " + err.toString());
+    }
+    log.info("Collector is up and running.");
+  });
+}
 
 let privateKey;
 let certificate;
 let passphrase;
 
 try {
-  privateKey = fs.readFileSync('./certs/key.pem', 'utf8');
-  certificate = fs.readFileSync('./certs/cert.pem', 'utf8');
+  privateKey = fs.readFileSync(config.get("HE_AUTH_SSL_KEY") || './certs/key.pem', 'utf8');
+  certificate = fs.readFileSync(config.get("HE_AUTH_SSL_CERT") || './certs/cert.pem', 'utf8');
   passphrase = config.get("HE_AUTH_SSL_PASS");
 } catch (err) {
   log.error("An error occurred while searching " +
     "for `key.pem` and `cert.pem`. " + err.toString());
+  process.exit(2);
 }
 
 let credentials = {
@@ -139,26 +178,9 @@ let credentials = {
 
 let httpsServer = https.createServer(credentials, app);
 
-log.info('Express started on port ' + DEFAULT_PORT);
-httpsServer.listen(DEFAULT_PORT);
-
-let keys = {};
-
-try {
-  // Decrypt JWE token with private key
-  keys.jweTokenUrl = fs.readFileSync('./certs/jwe_token_url.pem');
-  // Encrypt JWE with public key
-  keys.jweTokenUrlPub = fs.readFileSync('./certs/jwe_token_url_pub.pem');
-  // DecryptSecrets with private key
-  keys.jweSecretsKey = fs.readFileSync('./certs/jwe_secrets.pem');
-  // Sign JWT token with private key
-  keys.jwtToken = fs.readFileSync('./certs/jwt_token.pem');
-  // JWT public key
-  keys.jwtTokenPub = fs.readFileSync('./certs/jwt_token_pub.pem');
-} catch (err) {
-  log.error("An error occurred while searching " +
-    "for JWT/JWE public and private keys. " + err.toString());
-}
+httpsServer.listen(DEFAULT_PORT, () => {
+  log.info('Express started on port ' + httpsServer.address().port.toString());
+});
 
 // Export express app for testing
 exports.app = app;

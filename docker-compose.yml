@@ -31,6 +31,7 @@ services:
       VAULT_DEV_ROOT_TOKEN_ID:
       HE_IDENTITY_PORTAL_ENDPOINT:
       HE_IDENTITY_WS_ENDPOINT:
+      HE_RUN_COLLECTOR: true
     ports:
       - "8080:3000"
     depends_on:
