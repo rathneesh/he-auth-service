@@ -29,6 +29,7 @@ const fs = require('fs');
 // Disable eslint to allow for Nock generated objects
 /* eslint-disable quote-props*/
 /* eslint-disable no-unused-expressions */
+/* eslint-disable camelcase */
 
 process.env.HE_ISSUER = "issue";
 process.env.HE_AUTH_SERVICE_PORT = 0;
