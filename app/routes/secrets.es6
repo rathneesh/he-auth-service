@@ -71,6 +71,8 @@ let authenticateSecrets = (req, res) => {
 
       let user_info = decoded.user_info;
       let integration_name = decoded.integration_info;
+      let auth_config = decoded.integration_info.auth;
+
       encrypt.decryptWithKey(server.keys.jweSecretsKey, req.body.secrets, (err, decryptedSecrets) => {
         if (err) {
           log.error("An error occurred while decrypting " +
@@ -90,7 +92,7 @@ let authenticateSecrets = (req, res) => {
           });
         }
 
-        auth.authenticateAgainst(integration_name, user_info, decryptedSecretsObj, (err, success) => {
+        auth.authenticateAgainst(integration_name, user_info, auth_config, decryptedSecretsObj, (err, response) => {
           if (err) {
             log.error(
               `Internal server error while authenticating against ${integration_name} as ${user_info} in authenticateSecrets(). Error: ${err}`
@@ -100,7 +102,7 @@ let authenticateSecrets = (req, res) => {
             });
           }
 
-          if (!success) {
+          if (!response) {
             log.error(
               `Authentication against ${integration_name} as ${user_info} was not successful in authenticateSecrets()`
             );

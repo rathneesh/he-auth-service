@@ -23,6 +23,7 @@
 let app = require('../../server.es6');
 let stringsResource = require('../resources/strings.es6');
 let log = require('../resources/fluentd.es6');
+
 class SecretsList {
   removeSecret(id, cb) {
     app.vault.delete({id})

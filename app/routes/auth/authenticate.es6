@@ -20,21 +20,112 @@
 //
 // END OF TERMS AND CONDITIONS
 
-let stringsResource = require('../../resources/strings.es6');
+const stringsResource = require('../../resources/strings.es6');
 const _ = require('lodash');
+const log = require('../../resources/fluentd.es6');
+const request = require('request');
 
-let authenticateAgainst = (integration, user, secrets, cb) => {
-  if (!_.has(integration, 'name') || !_.has(user, 'id') || !_.has(integration, 'auth') || !_.isObject(secrets)
+const authMethods = {
+  BASIC_AUTH: 'basic_auth'
+};
+
+class Auth {
+  constructor(authConfig, secrets) {
+    this.authConfig = authConfig;
+    this.secrets = secrets;
+
+    // Subclasses must implement their own authentication method based on auth type
+    if (this.authenticate === undefined) {
+      throw new TypeError("Must override method `authenticate`");
+    }
+  }
+}
+
+class BasicAuth extends Auth {
+  // Returns success or failure
+  // cb( error, response )
+  authenticate(cb) {
+    let response = {};
+
+    // If no endpoint is given, authenticate successfully
+    if (!_.has(this.authConfig.params, 'endpoint')) {
+      log.info('Endpoint missing from parameter list. Skipping authentication step.');
+      return cb(null, response);
+    }
+
+    if (!_.has(this.secrets, 'username')) {
+      log.info('Endpoint found but a username was not provided.');
+      return cb(new Error('Username not provided'), null);
+    }
+
+    if (!_.has(this.secrets, 'password')) {
+      log.info('Endpoint found but a password was not provided.');
+      return cb(new Error('Password not provided'), null);
+    }
+
+    const endpoint = this.authConfig.params.endpoint;
+    const username = this.secrets.username;
+    const password = this.secrets.password;
+
+    const auth = "Basic " +
+      new Buffer(username + ":" + password).toString("base64");
+
+    request(
+      {
+        url: endpoint,
+        headers: {
+          Authorization: auth
+        }
+      },
+      (error, response, body) => {
+        if (response.statusCode === 200) {
+          // Successfully authenticated
+          log.info(`Successfully authenticated against ${endpoint}.`);
+          response.secrets = {
+            token: auth
+          };
+          return cb(null, response);
+        }
+
+        if (error) {
+          log.info(`Error while authenticating against ${endpoint}.`);
+          return cb(error, null);
+        }
+
+        return cb(null, null);
+      }
+    );
+  }
+}
+
+function newAuth(authConfig, secrets) {
+  switch (authConfig.type) {
+    case authMethods.BASIC_AUTH:
+      return new BasicAuth(authConfig, secrets);
+    default:
+      return null;
+  }
+}
+
+let authenticateAgainst = (integration, user, authConfig, secrets, cb) => {
+  if (!_.has(integration, 'name') || !_.has(user, 'id') ||
+      !_.has(integration, 'auth') || !_.isObject(secrets) || !_.has(authConfig, 'type')
   ) {
+    log.error('Authentication schema not met.');
     return cb(new Error(stringsResource.SCHEMA_REQUIREMENT_NOT_MET), false);
   }
 
-  // TODO: need to parse auth method and actually perform auth
-  let credentialsValidator = callback => {
-    callback(null, true);
-  };
+  let auth = newAuth(authConfig, secrets);
 
-  credentialsValidator(cb);
+  if (auth instanceof Auth) {
+    log.info('authenticating...');
+    auth.authenticate((err, success) => {
+      return cb(err, success);
+    });
+  } else {
+    log.error('Selected auth object is not of type Auth.');
+    return cb(new Error(stringsResource.SCHEMA_REQUIREMENT_NOT_MET), false);
+  }
 };
 
 exports.authenticateAgainst = authenticateAgainst;

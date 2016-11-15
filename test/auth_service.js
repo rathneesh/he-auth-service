@@ -51,6 +51,8 @@ process.env.HE_AUTH_SSL_CERT = "./test/assets/cert.pem";
 if (process.env.HTTP_PROXY || process.env.http_proxy) {
   process.env.NO_PROXY = process.env.NO_PROXY ? process.env.NO_PROXY + ',vault' : 'vault';
   process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',vault' : 'vault';
+  process.env.NO_PROXY = process.env.NO_PROXY ? process.env.NO_PROXY + ',basicauth' : 'basicauth';
+  process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',basicauth' : 'basicauth';
 }
 
 nock('http://vault:8200', {"encodedQueryParams": true})
@@ -190,14 +192,12 @@ nock('http://vault:8200', {"encodedQueryParams": true})
 nock('http://vault:8200', {"encodedQueryParams": true})
   .put('/v1/secret/abcd/integration', {
     "integration_info": {
-      "name": "integration", "auth": "auth"
+      "name": "integration", "auth": {"type": "basic_auth"}
     },
     "user_info": {
       "id": "abcd"
     },
-    "secrets": {
-      "test": "True"
-    }
+    "secrets": {"token": "YWRtaW46YWRtaW4="}
   })
   .reply(204, "", ['Content-Type',
     'application/json',
@@ -215,7 +215,7 @@ nock('http://vault:8200', {"encodedQueryParams": true})
     "lease_duration": 2592000,
     "data": {
       "integration_info": {"auth": "auth", "name": "integration"},
-      "secrets": {"test": "True"},
+      "secrets": {"username": "admin", "password": "admin"},
       "user_info": {"id": "abcd"}
     },
     "wrap_info": null,
@@ -252,6 +252,65 @@ nock('http://vault:8200', {"encodedQueryParams": true})
     'Connection',
     'close']);
 
+nock('http://basicauth', {"encodedQueryParams": true})
+  .get('/success')
+  .reply(200, {"authenticated": true, "user": "admin"}, ['Server',
+    'nginx',
+    'Date',
+    'Sat, 12 Nov 2016 03:10:08 GMT',
+    'Content-Type',
+    'application/json',
+    'Content-Length',
+    '48',
+    'Connection',
+    'close',
+    'Access-Control-Allow-Origin',
+    '*',
+    'Access-Control-Allow-Credentials',
+    'true']);
+
+nock('http://basicauth', {"encodedQueryParams": true})
+  .get('/failure')
+  .reply(401, {"authenticated": true, "user": "admin"}, ['Server',
+    'nginx',
+    'Date',
+    'Sat, 12 Nov 2016 03:10:08 GMT',
+    'Content-Type',
+    'application/json',
+    'Content-Length',
+    '48',
+    'Connection',
+    'close',
+    'Access-Control-Allow-Origin',
+    '*',
+    'Access-Control-Allow-Credentials',
+    'true']);
+
+nock('http://vault:8200', {"encodedQueryParams": true})
+  .put('/v1/secret/abcd/integration', {
+    "integration_info": {
+      "name": "integration",
+      "auth": {
+        "type": "basic_auth",
+        "params": {
+          "endpoint": "http://basicauth/success"
+        }
+      }
+    },
+    "user_info": {
+      "id": "abcd"
+    },
+    "secrets": {
+      "token": "YWRtaW46YWRtaW4="
+    }
+  })
+  .reply(204, "", ['Content-Type',
+    'application/json',
+    'Date',
+    'Sat, 12 Nov 2016 03:10:08 GMT',
+    'Connection',
+    'close']);
+
 const authService = require('../server.es6');
 const request = require('supertest')(authService.app);
 
@@ -259,7 +318,7 @@ const request = require('supertest')(authService.app);
 
 let token = "";
 let secret = '';
-let secretPayload = {"test": "True"};
+let secretPayload = {"username": "admin", "password": "admin"};
 
 describe('Auth Service tests', function() {
   this.timeout(20000);
@@ -272,6 +331,7 @@ describe('Auth Service tests', function() {
         if (err)
           return done(err);
         secret = encryptedSecrets;
+        console.log(encryptedSecrets);
         done();
       });
   });
@@ -349,7 +409,7 @@ describe('Auth Service tests', function() {
       },
       "integration_info": {
         "name": "integration",
-        "auth": "auth"
+        "auth": {"type": "basic_auth"}
       },
       "bot_info": "xyz",
       "url_props": {
@@ -433,5 +493,95 @@ describe('Auth Service tests', function() {
     request
       .get(`/secrets/${userID}/${integrationName}`)
       .expect(404, done);
+  });
+});
+
+describe('Auth Service endpoint authentication test', function() {
+  it('should yield valid token with an embedded endpoint (credentials set to admin:admin)', function(done) {
+    let payload = {
+      "user_info": {
+        "id": "abcd"
+      },
+      "integration_info": {
+        "name": "integration",
+        "auth": {
+          "type": "basic_auth",
+          "params": {
+            "endpoint": "http://basicauth/success"
+          }
+        }
+      },
+      "bot_info": "xyz",
+      "url_props": {
+        "ttl": 300
+      }
+    };
+    request
+      .post('/token_urls')
+      .send(payload)
+      .expect(201)
+      .expect(res => {
+        expect(res.body).exists;
+        expect(res.body.token).exists;
+        expect(res.body.message).equals('token_url created');
+        token = res.body.token;
+      })
+      .end(err => {
+        if (err) {
+          return done(err);
+        }
+        done();
+      });
+  });
+  it('should store the secret given valid credentials', function(done) {
+    request
+      .post('/secrets')
+      .send({"secrets": secret, "token": token})
+      .expect(201, done);
+  });
+});
+
+describe('Auth Service endpoint authentication test for failure', function() {
+  it('should yield valid token with an embedded endpoint (credentials set to admin:newPassword)', function(done) {
+    let payload = {
+      "user_info": {
+        "id": "abcd"
+      },
+      "integration_info": {
+        "name": "integration",
+        "auth": {
+          "type": "basic_auth",
+          "params": {
+            "endpoint": "http://basicauth/failure"
+          }
+        }
+      },
+      "bot_info": "xyz",
+      "url_props": {
+        "ttl": 300
+      }
+    };
+    request
+      .post('/token_urls')
+      .send(payload)
+      .expect(201)
+      .expect(res => {
+        expect(res.body).exists;
+        expect(res.body.token).exists;
+        expect(res.body.message).equals('token_url created');
+        token = res.body.token;
+      })
+      .end(err => {
+        if (err) {
+          return done(err);
+        }
+        done();
+      });
+  });
+  it('should store the secret given valid credentials', function(done) {
+    request
+      .post('/secrets')
+      .send({"secrets": secret, "token": token})
+      .expect(401, done);
   });
 });
