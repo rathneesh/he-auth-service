@@ -60,7 +60,7 @@ try {
 const DEFAULT_PORT = config.get("HE_AUTH_SERVICE_PORT") || 3000;
 
 // toggle for collector
-const RUN_COLLECTOR = config.get("HE_RUN_COLLECTOR") === "true";
+const SKIP_COLLECTOR = config.get("HE_AUTH_NO_COLLECTOR");
 
 // Load express
 let app = express();
@@ -136,7 +136,7 @@ app.post('/token_urls', tokenRoute.createToken);
 app.delete('/token_urls/:token', tokenRoute.deleteToken);
 
 // Start collector
-if (RUN_COLLECTOR) {
+if (!SKIP_COLLECTOR) {
   let selfSignedValue = config.get("HE_AUTH_SSL_SELF_SIGNED");
   let collectorConfig = {
     portalEndpoint: `${config.get("HE_IDENTITY_WS_ENDPOINT")}`,
