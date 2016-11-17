@@ -24,12 +24,6 @@ let secretsModel = require('../../models/secrets.es6');
 const log = require('./../../resources/fluentd.es6');
 
 let storeSecret = (integration, user, secrets, cb) => {
-  // TODO: add validation of inputs
-  if (integration.auth && integration.auth.type === 'basic_auth') {
-    secrets = {
-      token: new Buffer(secrets.username + ':' + secrets.password).toString('base64')
-    };
-  }
   let payload = {
     /* eslint-disable camelcase */
     integration_info: integration,
