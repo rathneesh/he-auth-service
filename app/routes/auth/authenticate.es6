@@ -128,4 +128,4 @@ let authenticateAgainst = (integration, user, authConfig, secrets, cb) => {
   }
 };
 
-exports.authenticateAgainst = authenticateAgainst;
+module.exports = {authenticateAgainst, authMethods};
