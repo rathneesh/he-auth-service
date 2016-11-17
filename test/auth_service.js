@@ -331,7 +331,6 @@ describe('Auth Service tests', function() {
         if (err)
           return done(err);
         secret = encryptedSecrets;
-        console.log(encryptedSecrets);
         done();
       });
   });
