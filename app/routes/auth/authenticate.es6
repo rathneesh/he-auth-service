@@ -42,15 +42,32 @@ class Auth {
 }
 
 class BasicAuth extends Auth {
+  constructor(authConfig, secrets) {
+    if (!secrets || !secrets.username || !secrets.password) {
+      throw new Error('Basic Auth requires username + password to be passed as secrets');
+    }
+    super(authConfig, secrets);
+  }
+  formatResponse(response) {
+    const username = this.secrets.username;
+    const password = this.secrets.password;
+    const base64Secrets = new Buffer(username + ":" + password).toString("base64");
+    // For basic auth, since there is no response, override it with the secrets obj.
+    response = {
+      token: base64Secrets
+    };
+    return response;
+  }
   // Returns success or failure
   // cb( error, response )
+  //   where response MUST have a response.secrets.token
   authenticate(cb) {
     let response = {};
 
     // If no endpoint is given, authenticate successfully
     if (!_.has(this.authConfig.params, 'endpoint')) {
       log.info('Endpoint missing from parameter list. Skipping authentication step.');
-      return cb(null, response);
+      return cb(null, this.formatResponse(response));
     }
 
     if (!_.has(this.secrets, 'username')) {
@@ -67,8 +84,8 @@ class BasicAuth extends Auth {
     const username = this.secrets.username;
     const password = this.secrets.password;
 
-    const auth = "Basic " +
-      new Buffer(username + ":" + password).toString("base64");
+    const base64Secrets = new Buffer(username + ":" + password).toString("base64");
+    const auth = "Basic " + base64Secrets;
 
     request(
       {
@@ -81,10 +98,7 @@ class BasicAuth extends Auth {
         if (response.statusCode === 200) {
           // Successfully authenticated
           log.info(`Successfully authenticated against ${endpoint}.`);
-          response.secrets = {
-            token: auth
-          };
-          return cb(null, response);
+          return cb(null, this.formatResponse(response));
         }
 
         if (error) {
@@ -112,7 +126,7 @@ let authenticateAgainst = (integration, user, authConfig, secrets, cb) => {
       !_.has(integration, 'auth') || !_.isObject(secrets) || !_.has(authConfig, 'type')
   ) {
     log.error('Authentication schema not met.');
-    return cb(new Error(stringsResource.SCHEMA_REQUIREMENT_NOT_MET), false);
+    return cb(new Error(stringsResource.SCHEMA_REQUIREMENT_NOT_MET), null);
   }
 
   let auth = newAuth(authConfig, secrets);
@@ -124,8 +138,8 @@ let authenticateAgainst = (integration, user, authConfig, secrets, cb) => {
     });
   } else {
     log.error('Selected auth object is not of type Auth.');
-    return cb(new Error(stringsResource.SCHEMA_REQUIREMENT_NOT_MET), false);
+    return cb(new Error(stringsResource.SCHEMA_REQUIREMENT_NOT_MET), null);
   }
 };
 
-exports.authenticateAgainst = authenticateAgainst;
+module.exports = {authenticateAgainst, authMethods};

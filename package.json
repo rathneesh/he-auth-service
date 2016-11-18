@@ -1,6 +1,6 @@
 {
   "name": "he-auth-service",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Auth microservice for Hubot Enterprise",
   "main": "index.js",
   "dependencies": {
@@ -12,6 +12,7 @@
     "express": "^4.14.0",
     "express-validator": "^2.20.8",
     "fluent-logger": "^2.2.0",
+    "he-identity-portal": "github:eedevops/he-identity-portal",
     "helmet": "^2.1.2",
     "jenkins-mocha": "^2.6.0",
     "joi": "^9.0.4",

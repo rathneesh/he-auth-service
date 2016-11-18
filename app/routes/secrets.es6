@@ -70,9 +70,11 @@ let authenticateSecrets = (req, res) => {
       }
 
       let user_info = decoded.user_info;
-      let integration_name = decoded.integration_info;
+      let userId = user_info.id;
+      let integration_info = decoded.integration_info;
+      let integration_name = integration_info.name;
       let auth_config = decoded.integration_info.auth;
-
+      let authMethod = integration_info.auth.type;
       encrypt.decryptWithKey(server.keys.jweSecretsKey, req.body.secrets, (err, decryptedSecrets) => {
         if (err) {
           log.error("An error occurred while decrypting " +
@@ -92,19 +94,19 @@ let authenticateSecrets = (req, res) => {
           });
         }
 
-        auth.authenticateAgainst(integration_name, user_info, auth_config, decryptedSecretsObj, (err, response) => {
+        auth.authenticateAgainst(integration_info, user_info, auth_config, decryptedSecretsObj, (err, readyToStoreSecrets) => {
           if (err) {
             log.error(
-              `Internal server error while authenticating against ${integration_name} as ${user_info} in authenticateSecrets(). Error: ${err}`
+              `Internal server error while authenticating against ${integration_name} as ${userId} in authenticateSecrets(). Error: ${err}`
             );
             return res.status(500).send({
               message: `${stringsResource.SECRETS_SUCCESS_INTERNAL_ERROR_MSG}. ${err}`
             });
           }
 
-          if (!response) {
+          if (!readyToStoreSecrets) {
             log.error(
-              `Authentication against ${integration_name} as ${user_info} was not successful in authenticateSecrets()`
+              `Authentication against ${integration_name} as ${userId} was not successful in authenticateSecrets()`
             );
             return res.status(401).send({
               message: stringsResource.SECRETS_SUCCESS_UNAUTHORIZED_MSG
@@ -112,22 +114,23 @@ let authenticateSecrets = (req, res) => {
           }
 
           log.info(
-            `Successful authentication against ${integration_name} as ${user_info}`
+            `Successful authentication against ${integration_name} as ${userId} using method ${authMethod}`
           );
 
-          store.storeSecret(integration_name, user_info, decryptedSecretsObj, (err, resp) => {
+          store.storeSecret(integration_info, user_info, readyToStoreSecrets, (err, resp) => {
             if (err) {
               log.error(
-                `Internal server error while storing credentials for ${integration_name} as ${user_info} in authenticateSecrets(). ${err}`
+                `Internal server error while storing credentials for ${integration_name} as ${userId} in authenticateSecrets(). ${err}`
               );
               return res.status(500).send({
                 message: `${stringsResource.SECRETS_INTERNAL_ERROR_MSG}. ${err}`
               });
             }
             log.info(
-              `Credentials have been stored for integration ${integration_name} as ${user_info}`
+              `Credentials have been stored for integration ${integration_name} as ${userId}`
             );
-            log.info(resp);
+            if (resp)
+              log.info(resp);
             return res.status(201).send(
               {
                 message: stringsResource.SECRETS_SUCCESS_CREATE_MSG

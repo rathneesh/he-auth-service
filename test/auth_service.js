@@ -33,7 +33,7 @@ const fs = require('fs');
 
 process.env.HE_ISSUER = "issue";
 process.env.HE_AUTH_SERVICE_PORT = 0;
-process.env.HE_RUN_COLLECTOR = "false";
+process.env.HE_AUTH_NO_COLLECTOR = 1;
 process.env.HE_AUDIENCE = "audience";
 process.env.HE_AUTH_SSL_PASS = "default";
 process.env.JWE_SECRETS_PATH = "./test/assets/jwe_secrets_assets.pem";
@@ -331,7 +331,6 @@ describe('Auth Service tests', function() {
         if (err)
           return done(err);
         secret = encryptedSecrets;
-        console.log(encryptedSecrets);
         done();
       });
   });

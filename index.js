@@ -22,3 +22,4 @@
 
 // Expose libraries (for npm usage)
 module.exports.client = require('./app/client/client_lib.es6');
+module.exports.lib = require('./app/routes/auth/authenticate.es6');
