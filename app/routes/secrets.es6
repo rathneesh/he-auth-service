@@ -129,7 +129,8 @@ let authenticateSecrets = (req, res) => {
             log.info(
               `Credentials have been stored for integration ${integration_name} as ${userId}`
             );
-            log.info(resp);
+            if (resp)
+              log.info(resp);
             return res.status(201).send(
               {
                 message: stringsResource.SECRETS_SUCCESS_CREATE_MSG

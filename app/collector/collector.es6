@@ -21,7 +21,7 @@
 // END OF TERMS AND CONDITIONS
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-const portal = require('./portal.es6');
+const portal = require('he-identity-portal').client;
 const noConfigError = require('./errors.es6').noConfigError;
 const missingConfigParam = require('./errors.es6').missingConfigParam;
 const authServiceClient = require('../client/client_lib.es6');
@@ -71,30 +71,30 @@ class Collector {
     // Make sure we stop collectors first
     this.stop(() => {
       this.collectSecretsInterval = setInterval(() => {
+        log.debug('Collecting secrets');
         // is `secrets` and incoming secrets array or is it a single secret?
         portal.collectSecrets((err, secrets) => {
           if (err) {
             return log.error('error in collector (secrets)');
           }
-          log.info('collected', secrets);
+          log.info('collected secrets');
+          log.debug('collected', secrets);
           secrets.forEach(secret => {
             this.sendToAuthService(secret.secret, secret.token, (err, resp) => {
+              let finalStatus = statuses.success;
+              log.info('successfully relayed secrets / tokens to auth service');
+              log.debug(resp);
               if (err) {
                 log.error('Error posting secrets with token:', secret.token, err);
-                portal.updateStatus(secret.token, statuses.failure, (err, resp) => {
-                  if (err) {
-                    return log.error("An error occurred while sending update status to portal. " + err.toString());
-                  }
-                  log.debug('Success in updating status to ' + statuses.failure);
-                });
-              } else {
-                portal.updateStatus(secret.token, statuses.success, (err, resp) => {
-                  if (err) {
-                    return log.error("An error occurred while sending update status to portal. " + err.toString());
-                  }
-                  log.debug("sent success status");
-                });
+                finalStatus = statuses.failure;
               }
+              portal.updateStatus(secret.token, finalStatus, (err, resp) => {
+                if (err) {
+                  return log.error("An error occurred while sending update status to portal. " + err.toString());
+                }
+                log.info('Success in updating status to ' + finalStatus);
+                log.debug('response from portal service', resp);
+              });
             });
           });
         });
