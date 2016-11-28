@@ -26,7 +26,8 @@ const log = require('../../resources/fluentd.es6');
 const request = require('request');
 
 const authMethods = {
-  BASIC_AUTH: 'basic_auth'
+  BASIC_AUTH: 'basic_auth',
+  IDM_AUTH: 'idm_auth'
 };
 
 class Auth {
@@ -43,9 +44,6 @@ class Auth {
 
 class BasicAuth extends Auth {
   constructor(authConfig, secrets) {
-    if (!secrets || !secrets.username || !secrets.password) {
-      throw new Error('Basic Auth requires username + password to be passed as secrets');
-    }
     super(authConfig, secrets);
   }
   formatResponse(response) {
@@ -80,9 +78,10 @@ class BasicAuth extends Auth {
       return cb(new Error('Password not provided'), null);
     }
 
-    const endpoint = this.authConfig.params.endpoint;
     const username = this.secrets.username;
     const password = this.secrets.password;
+    const endpoint = this.authConfig.params.endpoint.url;
+    const verb = this.authConfig.params.endpoint.verb;
 
     const base64Secrets = new Buffer(username + ":" + password).toString("base64");
     const auth = "Basic " + base64Secrets;
@@ -90,12 +89,13 @@ class BasicAuth extends Auth {
     request(
       {
         url: endpoint,
+        method: verb,
         headers: {
           Authorization: auth
         }
       },
       (error, response, body) => {
-        if (response.statusCode === 200) {
+        if (response.statusCode >= 200 && response.statusCode <= 299) {
           // Successfully authenticated
           log.info(`Successfully authenticated against ${endpoint}.`);
           return cb(null, this.formatResponse(response));
@@ -106,7 +106,100 @@ class BasicAuth extends Auth {
           return cb(error, null);
         }
 
-        return cb(null, null);
+        return cb(new Error(`Authentication unsuccessful for ${endpoint}.`), null);
+      }
+    );
+  }
+}
+
+class IdmAuth extends Auth {
+  constructor(authConfig, secrets) {
+    super(authConfig, secrets);
+  }
+  formatResponse(response) {
+    const token = response.token.id;
+    const refreshToken = response.refreshToken;
+    return {
+      token,
+      refreshToken
+    };
+  }
+  // Returns success or failure
+  // cb( error, response )
+  //   where response MUST have a response.secrets.token
+  authenticate(cb) {
+    if (
+      !_.has(this.authConfig.params, 'endpoint') || 
+      !_.has(this.authConfig.params.endpoint, 'url') ||
+      !_.has(this.authConfig.params.endpoint, 'verb')
+      ) {
+      log.info('Endpoint missing from parameter list. Cannot construct IDM token without endpoint.');
+      return cb(new Error('Endpoint not provided'), null);
+    }
+
+    if (
+      !_.has(this.secrets, 'user') ||
+      !_.has(this.secrets, 'tenant')
+      ) {
+      log.info('Endpoint found but an USER or TENANT object was not provided.');
+      return cb(new Error('USER/TENANT object was not provided'), null);
+    }
+    
+    if (
+      !_.has(this.secrets.user, 'username') ||
+      !_.has(this.secrets.user, 'password')
+      ) {
+      log.info('Endpoint found but credentials are malformed in the USER object.');
+      return cb(new Error('Credentials are malformed in the USER object'), null);
+    }
+    
+    if (
+      !_.has(this.secrets.tenant, 'username') ||
+      !_.has(this.secrets.tenant, 'password')
+      ) {
+      log.info('Endpoint found but credentials are malformed in the TENANT object.');
+      return cb(new Error('Credentials are malformed in the TENANT object'), null);
+    }
+
+    const url = this.authConfig.params.endpoint.url;
+    const verb = this.authConfig.params.endpoint.verb;
+    const username = this.secrets.user.username;
+    const password = this.secrets.user.password;
+    const tenantUsername = this.secrets.tenant.username;
+    const tenantPassword = this.secrets.tenant.password;
+
+    const base64Secrets = new Buffer(tenantUsername + ":" + tenantPassword).toString("base64");
+    const auth = "Basic " + base64Secrets;
+
+    request(
+      {
+        url: url,
+        method: verb,
+        json: true,
+        body: {
+          passwordCredentials: {
+            username: username,
+            password: password
+          },
+          tenantName: tenantUsername
+        },
+        headers: {
+          Authorization: auth
+        }
+      },
+      (error, response, body) => {
+        if (response.statusCode >= 200 && response.statusCode <= 299) {
+          // Successfully authenticated
+          log.info(`Successfully authenticated against ${url}.`);
+          return cb(null, this.formatResponse(response));
+        }
+
+        if (error) {
+          log.info(`Error while authenticating against ${url}.`);
+          return cb(error, null);
+        }
+
+        return cb(new Error(`Authentication unsuccessful for ${url}.`), null);
       }
     );
   }
@@ -116,6 +209,8 @@ function newAuth(authConfig, secrets) {
   switch (authConfig.type) {
     case authMethods.BASIC_AUTH:
       return new BasicAuth(authConfig, secrets);
+    case authMethods.IDM_AUTH:
+      return new IdmAuth(authConfig, secrets);
     default:
       return null;
   }
