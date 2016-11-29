@@ -43,10 +43,6 @@ class Auth {
 }
 
 class BasicAuth extends Auth {
-/* eslint-disable no-useless-constructor */
-  constructor(authConfig, secrets) {
-    super(authConfig, secrets);
-  }
   formatResponse(response) {
     const username = this.secrets.username;
     const password = this.secrets.password;
@@ -114,10 +110,6 @@ class BasicAuth extends Auth {
 }
 
 class IdmAuth extends Auth {
-  constructor(authConfig, secrets) {
-    super(authConfig, secrets);
-  }
-
   formatResponse(response) {
     const token = response.token.id;
     const refreshToken = response.refreshToken;
