@@ -95,15 +95,15 @@ class BasicAuth extends Auth {
         }
       },
       (error, response, body) => {
-        if (response.statusCode >= 200 && response.statusCode <= 299) {
-          // Successfully authenticated
-          log.info(`Successfully authenticated against ${endpoint}.`);
-          return cb(null, this.formatResponse(response));
-        }
-
         if (error) {
           log.info(`Error while authenticating against ${endpoint}.`);
           return cb(error, null);
+        }
+
+        if (response && response.statusCode >= 200 && response.statusCode <= 299) {
+          // Successfully authenticated
+          log.info(`Successfully authenticated against ${endpoint}.`);
+          return cb(null, this.formatResponse(response));
         }
 
         return cb(new Error(`Authentication unsuccessful for ${endpoint}.`), null);
@@ -188,15 +188,15 @@ class IdmAuth extends Auth {
         }
       },
       (error, response, body) => {
-        if (response.statusCode >= 200 && response.statusCode <= 299) {
-          // Successfully authenticated
-          log.info(`Successfully authenticated against ${url}.`);
-          return cb(null, this.formatResponse(response));
-        }
-
         if (error) {
           log.info(`Error while authenticating against ${url}.`);
           return cb(error, null);
+        }
+
+        if (response && response.statusCode >= 200 && response.statusCode <= 299) {
+          // Successfully authenticated
+          log.info(`Successfully authenticated against ${url}.`);
+          return cb(null, this.formatResponse(response));
         }
 
         return cb(new Error(`Authentication unsuccessful for ${url}.`), null);
