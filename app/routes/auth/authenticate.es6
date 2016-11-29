@@ -95,15 +95,15 @@ class BasicAuth extends Auth {
         }
       },
       (error, response, body) => {
-        if (response.statusCode === 200) {
-          // Successfully authenticated
-          log.info(`Successfully authenticated against ${endpoint}.`);
-          return cb(null, this.formatResponse(response));
-        }
-
         if (error) {
           log.info(`Error while authenticating against ${endpoint}.`);
           return cb(error, null);
+        }
+
+        if (response && response.statusCode === 200) {
+          // Successfully authenticated
+          log.info(`Successfully authenticated against ${endpoint}.`);
+          return cb(null, this.formatResponse(response));
         }
 
         return cb(null, null);
