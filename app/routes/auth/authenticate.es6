@@ -43,6 +43,7 @@ class Auth {
 }
 
 class BasicAuth extends Auth {
+/* eslint-disable no-useless-constructor */
   constructor(authConfig, secrets) {
     super(authConfig, secrets);
   }
@@ -116,6 +117,7 @@ class IdmAuth extends Auth {
   constructor(authConfig, secrets) {
     super(authConfig, secrets);
   }
+
   formatResponse(response) {
     const token = response.token.id;
     const refreshToken = response.refreshToken;
@@ -129,7 +131,7 @@ class IdmAuth extends Auth {
   //   where response MUST have a response.secrets.token
   authenticate(cb) {
     if (
-      !_.has(this.authConfig.params, 'endpoint') || 
+      !_.has(this.authConfig.params, 'endpoint') ||
       !_.has(this.authConfig.params.endpoint, 'url') ||
       !_.has(this.authConfig.params.endpoint, 'verb')
       ) {
@@ -144,7 +146,7 @@ class IdmAuth extends Auth {
       log.info('Endpoint found but an USER or TENANT object was not provided.');
       return cb(new Error('USER/TENANT object was not provided'), null);
     }
-    
+
     if (
       !_.has(this.secrets.user, 'username') ||
       !_.has(this.secrets.user, 'password')
@@ -152,7 +154,7 @@ class IdmAuth extends Auth {
       log.info('Endpoint found but credentials are malformed in the USER object.');
       return cb(new Error('Credentials are malformed in the USER object'), null);
     }
-    
+
     if (
       !_.has(this.secrets.tenant, 'username') ||
       !_.has(this.secrets.tenant, 'password')
