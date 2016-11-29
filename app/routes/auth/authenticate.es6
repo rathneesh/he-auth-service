@@ -30,6 +30,12 @@ const authMethods = {
   IDM_AUTH: 'idm_auth'
 };
 
+const supportedVerbs = [
+  'GET',
+  'PUT',
+  'POST'
+];
+
 class Auth {
   constructor(authConfig, secrets) {
     this.authConfig = authConfig;
@@ -43,9 +49,6 @@ class Auth {
 }
 
 class BasicAuth extends Auth {
-  constructor(authConfig, secrets) {
-    super(authConfig, secrets);
-  }
   formatResponse(response) {
     const username = this.secrets.username;
     const password = this.secrets.password;
@@ -66,6 +69,19 @@ class BasicAuth extends Auth {
     if (!_.has(this.authConfig.params, 'endpoint')) {
       log.info('Endpoint missing from parameter list. Skipping authentication step.');
       return cb(null, this.formatResponse(response));
+    }
+
+    if (
+      !_.has(this.authConfig.params.endpoint, 'url') ||
+      !_.has(this.authConfig.params.endpoint, 'verb')
+      ) {
+      log.info('URL or VERB not provided.');
+      return cb(new Error('URL or VERB not provided.'), null);
+    }
+
+    if (!supportedVerbs.includes(this.authConfig.params.endpoint.verb)) {
+      log.info('VERB not supported.');
+      return cb(new Error('VERB not supported.'), null);
     }
 
     if (!_.has(this.secrets, 'username')) {
@@ -95,27 +111,25 @@ class BasicAuth extends Auth {
         }
       },
       (error, response, body) => {
-        if (response.statusCode >= 200 && response.statusCode <= 299) {
-          // Successfully authenticated
-          log.info(`Successfully authenticated against ${endpoint}.`);
-          return cb(null, this.formatResponse(response));
-        }
-
         if (error) {
           log.info(`Error while authenticating against ${endpoint}.`);
           return cb(error, null);
         }
 
-        return cb(new Error(`Authentication unsuccessful for ${endpoint}.`), null);
+        if (response && response.statusCode >= 200 && response.statusCode <= 299) {
+          // Successfully authenticated
+          log.info(`Successfully authenticated against ${endpoint}.`);
+          log.debug(body);
+          return cb(null, this.formatResponse(response));
+        }
+
+        return cb(null, null);
       }
     );
   }
 }
 
 class IdmAuth extends Auth {
-  constructor(authConfig, secrets) {
-    super(authConfig, secrets);
-  }
   formatResponse(response) {
     const token = response.token.id;
     const refreshToken = response.refreshToken;
@@ -129,12 +143,17 @@ class IdmAuth extends Auth {
   //   where response MUST have a response.secrets.token
   authenticate(cb) {
     if (
-      !_.has(this.authConfig.params, 'endpoint') || 
+      !_.has(this.authConfig.params, 'endpoint') ||
       !_.has(this.authConfig.params.endpoint, 'url') ||
       !_.has(this.authConfig.params.endpoint, 'verb')
       ) {
-      log.info('Endpoint missing from parameter list. Cannot construct IDM token without endpoint.');
+      log.info('URL or VERB not provided.');
       return cb(new Error('Endpoint not provided'), null);
+    }
+
+    if (!supportedVerbs.includes(this.authConfig.params.endpoint.verb)) {
+      log.info('VERB not supported.');
+      return cb(new Error('VERB not supported.'), null);
     }
 
     if (
@@ -144,7 +163,7 @@ class IdmAuth extends Auth {
       log.info('Endpoint found but an USER or TENANT object was not provided.');
       return cb(new Error('USER/TENANT object was not provided'), null);
     }
-    
+
     if (
       !_.has(this.secrets.user, 'username') ||
       !_.has(this.secrets.user, 'password')
@@ -152,7 +171,7 @@ class IdmAuth extends Auth {
       log.info('Endpoint found but credentials are malformed in the USER object.');
       return cb(new Error('Credentials are malformed in the USER object'), null);
     }
-    
+
     if (
       !_.has(this.secrets.tenant, 'username') ||
       !_.has(this.secrets.tenant, 'password')
@@ -188,15 +207,16 @@ class IdmAuth extends Auth {
         }
       },
       (error, response, body) => {
-        if (response.statusCode >= 200 && response.statusCode <= 299) {
-          // Successfully authenticated
-          log.info(`Successfully authenticated against ${url}.`);
-          return cb(null, this.formatResponse(response));
-        }
-
         if (error) {
           log.info(`Error while authenticating against ${url}.`);
           return cb(error, null);
+        }
+
+        if (response && response.statusCode >= 200 && response.statusCode <= 299) {
+          // Successfully authenticated
+          log.info(`Successfully authenticated against ${url}.`);
+          log.debug(body);
+          return cb(null, this.formatResponse(response));
         }
 
         return cb(new Error(`Authentication unsuccessful for ${url}.`), null);

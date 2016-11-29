@@ -293,7 +293,10 @@ nock('http://vault:8200', {"encodedQueryParams": true})
       "auth": {
         "type": "basic_auth",
         "params": {
-          "endpoint": "http://basicauth/success"
+          "endpoint": {
+            url: "http://basicauth/success",
+            verb: "GET"
+          }
         }
       }
     },
@@ -506,7 +509,10 @@ describe('Auth Service endpoint authentication test', function() {
         "auth": {
           "type": "basic_auth",
           "params": {
-            "endpoint": "http://basicauth/success"
+            "endpoint": {
+              url: "http://basicauth/success",
+              verb: "GET"
+            }
           }
         }
       },
@@ -551,7 +557,10 @@ describe('Auth Service endpoint authentication test for failure', function() {
         "auth": {
           "type": "basic_auth",
           "params": {
-            "endpoint": "http://basicauth/failure"
+            "endpoint": {
+              url: "http://basicauth/failure",
+              verb: "GET"
+            }
           }
         }
       },
