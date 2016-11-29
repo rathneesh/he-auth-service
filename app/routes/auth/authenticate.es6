@@ -103,6 +103,7 @@ class BasicAuth extends Auth {
         if (response && response.statusCode === 200) {
           // Successfully authenticated
           log.info(`Successfully authenticated against ${endpoint}.`);
+          log.debug(body);
           return cb(null, this.formatResponse(response));
         }
 
