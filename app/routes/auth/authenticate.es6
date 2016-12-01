@@ -30,11 +30,11 @@ const authMethods = {
   IDM_AUTH: 'idm_auth'
 };
 
-const supportedVerbs = [
-  'GET',
-  'PUT',
-  'POST'
-];
+const supportedVerbs = {
+  GET: 'GET',
+  PUT: 'PUT',
+  POST: 'POST'
+};
 
 class Auth {
   constructor(authConfig, secrets) {
@@ -79,7 +79,7 @@ class BasicAuth extends Auth {
       return cb(new Error('URL or VERB not provided.'), null);
     }
 
-    if (!supportedVerbs.includes(this.authConfig.params.endpoint.verb)) {
+    if (!_.includes(supportedVerbs, this.authConfig.params.endpoint.verb)) {
       log.info('VERB not supported.');
       return cb(new Error('VERB not supported.'), null);
     }
@@ -147,11 +147,11 @@ class IdmAuth extends Auth {
       !_.has(this.authConfig.params.endpoint, 'url') ||
       !_.has(this.authConfig.params.endpoint, 'verb')
       ) {
-      log.info('URL or VERB not provided.');
-      return cb(new Error('Endpoint not provided'), null);
+      log.info('ENDPOINT, URL or VERB not provided.');
+      return cb(new Error('ENDPOINT, URL or VERB not provided.'), null);
     }
 
-    if (!supportedVerbs.includes(this.authConfig.params.endpoint.verb)) {
+    if (!_.includes(supportedVerbs, this.authConfig.params.endpoint.verb)) {
       log.info('VERB not supported.');
       return cb(new Error('VERB not supported.'), null);
     }
@@ -257,4 +257,4 @@ let authenticateAgainst = (integration, user, authConfig, secrets, cb) => {
   }
 };
 
-module.exports = {authenticateAgainst, authMethods};
+module.exports = {authenticateAgainst, authMethods, supportedVerbs};

@@ -24,6 +24,7 @@ const nock = require('nock');
 const expect = require('chai').expect;
 const encryptUtil = require('./../app/routes/auth/encrypt.es6');
 const fs = require('fs');
+const async = require('async');
 
 // TODO: add test for TTL expiration.
 // Disable eslint to allow for Nock generated objects
@@ -320,7 +321,7 @@ const request = require('supertest')(authService.app);
 /* eslint-disable no-undef */
 
 let token = "";
-let secret = '';
+let secret = "";
 let secretPayload = {"username": "admin", "password": "admin"};
 
 describe('Auth Service tests', function() {
@@ -591,5 +592,560 @@ describe('Auth Service endpoint authentication test for failure', function() {
       .post('/secrets')
       .send({"secrets": secret, "token": token})
       .expect(401, done);
+  });
+});
+
+describe('Test IDM authentication', function() {
+  it('Should fail if missing endpoint', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing url', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  verb: "GET"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing verb', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing secrets', function(done) {
+    request
+      .post('/secrets')
+      .send({"token": token})
+      .expect(500, done);
+  });
+  it('Should fail if missing user', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "GET"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing username in user structure', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "password": "admin"
+          },
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "GET"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing password in user structure', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin"
+          },
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "GET"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing tenant', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "GET"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing username in tenant structure', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          },
+          "tenant": {
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "GET"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing password in tenant structure', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          },
+          "tenant": {
+            "username": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "GET"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
   });
 });
