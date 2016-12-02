@@ -55,6 +55,8 @@ if (process.env.HTTP_PROXY || process.env.http_proxy) {
   process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',vault' : 'vault';
   process.env.NO_PROXY = process.env.NO_PROXY ? process.env.NO_PROXY + ',basicauth' : 'basicauth';
   process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',basicauth' : 'basicauth';
+  process.env.NO_PROXY = process.env.NO_PROXY ? process.env.NO_PROXY + ',idmauth' : 'idmauth';
+  process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',idmauth' : 'idmauth';
 }
 
 nock('http://vault:8200', {"encodedQueryParams": true})
