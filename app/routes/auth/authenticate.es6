@@ -24,7 +24,7 @@ const stringsResource = require('../../resources/strings.es6');
 const _ = require('lodash');
 const log = require('../../resources/fluentd.es6');
 const request = require('request');
-const resources = require('../../resources/strings.es6')
+const resources = require('../../resources/strings.es6');
 
 const authMethods = {
   BASIC_AUTH: 'basic_auth',
@@ -39,15 +39,15 @@ const supportedVerbs = {
 
 const validAuthReturnCodes = [
   200,
-  201,                                                                                   
-  202,                                                                                  
-  203,                                                             
-  204,                                                                                
-  205,                                                                             
-  206,                                                                           
-  207,                                                                              
-  208,                                                                          
-  226 
+  201,
+  202,
+  203,
+  204,
+  205,
+  206,
+  207,
+  208,
+  226
 ];
 
 class Auth {
@@ -86,7 +86,7 @@ class BasicAuth extends Auth {
 
     // If no endpoint is given, authenticate successfully
     if (
-      !_.has(this.authConfig, 'params') || 
+      !_.has(this.authConfig, 'params') ||
       this.authConfig.params === undefined ||
       !_.has(this.authConfig.params, 'endpoint') ||
       this.authConfig.params.endpoint === undefined
@@ -102,7 +102,7 @@ class BasicAuth extends Auth {
       log.error(resources.URL_MISSING);
       return cb(new Error(resources.URL_MISSING), null);
     }
-    
+
     if (
       !_.has(this.authConfig.params.endpoint, 'verb') ||
       this.authConfig.params.endpoint.verb === undefined
@@ -122,7 +122,7 @@ class BasicAuth extends Auth {
     }
 
     if (
-      !_.has(this.secrets, 'username') || 
+      !_.has(this.secrets, 'username') ||
       this.secrets.username === undefined
       ) {
       log.error(resources.USERNAME_MISSING);
@@ -130,7 +130,7 @@ class BasicAuth extends Auth {
     }
 
     if (
-      !_.has(this.secrets, 'password') || 
+      !_.has(this.secrets, 'password') ||
       this.secrets.password === undefined
       ) {
       log.error(resources.PASSWORD_MISSING);
@@ -235,7 +235,7 @@ class IdmAuth extends Auth {
       log.error(resources.TENANT_STRUCTURE_MISSING);
       return cb(new Error(resources.TENANT_STRUCTURE_MISSING), null);
     }
-    
+
     if (
       !_.has(this.secrets, 'user') ||
       this.secrets.user === undefined
@@ -251,7 +251,7 @@ class IdmAuth extends Auth {
       log.error(resources.USER_USERNAME_MISSING);
       return cb(new Error(resources.USER_USERNAME_MISSING), null);
     }
-    
+
     if (
       !_.has(this.secrets.user, 'password') ||
       this.secrets.user.password === undefined
