@@ -24,6 +24,7 @@ const stringsResource = require('../../resources/strings.es6');
 const _ = require('lodash');
 const log = require('../../resources/fluentd.es6');
 const request = require('request');
+const resources = require('../../resources/strings.es6')
 
 const authMethods = {
   BASIC_AUTH: 'basic_auth',
@@ -35,6 +36,19 @@ const supportedVerbs = {
   PUT: 'PUT',
   POST: 'POST'
 };
+
+const validAuthReturnCodes = [
+  200,
+  201,                                                                                   
+  202,                                                                                  
+  203,                                                             
+  204,                                                                                
+  205,                                                                             
+  206,                                                                           
+  207,                                                                              
+  208,                                                                          
+  226 
+];
 
 class Auth {
   constructor(authConfig, secrets) {
@@ -65,33 +79,62 @@ class BasicAuth extends Auth {
   authenticate(cb) {
     let response = {};
 
+    if (this.authConfig === undefined) {
+      log.error(resources.PARAMS_MISSING);
+      return cb(new Error(resources.PARAMS_MISSING), null);
+    }
+
     // If no endpoint is given, authenticate successfully
-    if (!_.has(this.authConfig.params, 'endpoint')) {
+    if (
+      !_.has(this.authConfig, 'params') || 
+      this.authConfig.params === undefined ||
+      !_.has(this.authConfig.params, 'endpoint') ||
+      this.authConfig.params.endpoint === undefined
+      ) {
       log.info('Endpoint missing from parameter list. Skipping authentication step.');
       return cb(null, this.formatResponse(response));
     }
 
     if (
       !_.has(this.authConfig.params.endpoint, 'url') ||
-      !_.has(this.authConfig.params.endpoint, 'verb')
+      this.authConfig.params.endpoint.url === undefined
       ) {
-      log.info('URL or VERB not provided.');
-      return cb(new Error('URL or VERB not provided.'), null);
+      log.error(resources.URL_MISSING);
+      return cb(new Error(resources.URL_MISSING), null);
+    }
+    
+    if (
+      !_.has(this.authConfig.params.endpoint, 'verb') ||
+      this.authConfig.params.endpoint.verb === undefined
+      ) {
+      log.error(resources.VERB_MISSING);
+      return cb(new Error(resources.VERB_MISSING), null);
     }
 
     if (!_.includes(supportedVerbs, this.authConfig.params.endpoint.verb)) {
-      log.info('VERB not supported.');
-      return cb(new Error('VERB not supported.'), null);
+      log.error(resources.VERB_NOT_SUPPORTED);
+      return cb(new Error(resources.VERB_NOT_SUPPORTED), null);
     }
 
-    if (!_.has(this.secrets, 'username')) {
-      log.info('Endpoint found but a username was not provided.');
-      return cb(new Error('Username not provided'), null);
+    if (this.secrets === undefined) {
+      log.error(resources.SECRETS_MISSING);
+      return cb(new Error(resources.SECRETS_MISSING), null);
     }
 
-    if (!_.has(this.secrets, 'password')) {
-      log.info('Endpoint found but a password was not provided.');
-      return cb(new Error('Password not provided'), null);
+    if (
+      !_.has(this.secrets, 'username') || 
+      this.secrets.username === undefined
+      ) {
+      log.error(resources.USERNAME_MISSING);
+      return cb(new Error(resources.USERNAME_MISSING), null);
+    }
+
+    if (
+      !_.has(this.secrets, 'password') || 
+      this.secrets.password === undefined
+      ) {
+      log.error(resources.PASSWORD_MISSING);
+      return cb(new Error(resources.PASSWORD_MISSING), null);
     }
 
     const username = this.secrets.username;
@@ -112,11 +155,11 @@ class BasicAuth extends Auth {
       },
       (error, response, body) => {
         if (error) {
-          log.info(`Error while authenticating against ${endpoint}.`);
+          log.error(`Error while authenticating against ${endpoint}.`);
           return cb(error, null);
         }
 
-        if (response && response.statusCode >= 200 && response.statusCode <= 299) {
+        if (response && _.includes(validAuthReturnCodes, response.statusCode)) {
           // Successfully authenticated
           log.info(`Successfully authenticated against ${endpoint}.`);
           log.debug(body);
@@ -143,41 +186,94 @@ class IdmAuth extends Auth {
   //   where response MUST have a response.secrets.token
   authenticate(cb) {
     if (
-      !_.has(this.authConfig.params, 'endpoint') ||
-      !_.has(this.authConfig.params.endpoint, 'url') ||
-      !_.has(this.authConfig.params.endpoint, 'verb')
+      this.authConfig === undefined ||
+      !_.has(this.authConfig, 'params') ||
+      this.authConfig.params === undefined
       ) {
-      log.info('ENDPOINT, URL or VERB not provided.');
-      return cb(new Error('ENDPOINT, URL or VERB not provided.'), null);
-    }
-
-    if (!_.includes(supportedVerbs, this.authConfig.params.endpoint.verb)) {
-      log.info('VERB not supported.');
-      return cb(new Error('VERB not supported.'), null);
+      log.error(resources.PARAMS_MISSING);
+      return cb(new Error(resources.PARAMS_MISSING), null);
     }
 
     if (
-      !_.has(this.secrets, 'user') ||
-      !_.has(this.secrets, 'tenant')
+      !_.has(this.authConfig.params, 'endpoint') ||
+      this.authConfig.params.endpoint === undefined
       ) {
-      log.info('Endpoint found but an USER or TENANT object was not provided.');
-      return cb(new Error('USER/TENANT object was not provided'), null);
+      log.error(resources.ENDPOINT_MISSING);
+      return cb(new Error(resources.ENDPOINT_MISSING), null);
+    }
+
+    if (
+      !_.has(this.authConfig.params.endpoint, 'url') ||
+      this.authConfig.params.endpoint.url === undefined
+      ) {
+      log.error(resources.URL_MISSING);
+      return cb(new Error(resources.URL_MISSING), null);
+    }
+
+    if (
+      !_.has(this.authConfig.params.endpoint, 'verb') ||
+      this.authConfig.params.endpoint.verb === undefined
+      ) {
+      log.error(resources.VERB_MISSING);
+      return cb(new Error(resources.VERB_MISSING), null);
+    }
+
+    if (!_.includes(supportedVerbs, this.authConfig.params.endpoint.verb)) {
+      log.error(resources.VERB_NOT_SUPPORTED);
+      return cb(new Error(resources.VERB_NOT_SUPPORTED), null);
+    }
+
+    if (this.secrets === undefined) {
+      log.error(resources.SECRETS_MISSING);
+      return cb(new Error(resources.SECRETS_MISSING), null);
+    }
+
+    if (
+      !_.has(this.secrets, 'tenant') ||
+      this.secrets.tenant === undefined
+      ) {
+      log.error(resources.TENANT_STRUCTURE_MISSING);
+      return cb(new Error(resources.TENANT_STRUCTURE_MISSING), null);
+    }
+    
+    if (
+      !_.has(this.secrets, 'user') ||
+      this.secrets.user === undefined
+      ) {
+      log.error(resources.USER_STRUCTURE_MISSING);
+      return cb(new Error(resources.USER_STRUCTURE_MISSING), null);
     }
 
     if (
       !_.has(this.secrets.user, 'username') ||
-      !_.has(this.secrets.user, 'password')
+      this.secrets.user.username === undefined
       ) {
-      log.info('Endpoint found but credentials are malformed in the USER object.');
-      return cb(new Error('Credentials are malformed in the USER object'), null);
+      log.error(resources.USER_USERNAME_MISSING);
+      return cb(new Error(resources.USER_USERNAME_MISSING), null);
+    }
+    
+    if (
+      !_.has(this.secrets.user, 'password') ||
+      this.secrets.user.password === undefined
+      ) {
+      log.error(resources.USER_PASSWORD_MISSING);
+      return cb(new Error(resources.USER_PASSWORD_MISSING), null);
     }
 
     if (
       !_.has(this.secrets.tenant, 'username') ||
-      !_.has(this.secrets.tenant, 'password')
+      this.secrets.tenant.username === undefined
       ) {
-      log.info('Endpoint found but credentials are malformed in the TENANT object.');
-      return cb(new Error('Credentials are malformed in the TENANT object'), null);
+      log.error(resources.TENANT_USERNAME_MISSING);
+      return cb(new Error(resources.TENANT_USERNAME_MISSING), null);
+    }
+
+    if (
+      !_.has(this.secrets.tenant, 'password') ||
+      this.secrets.tenant.password === undefined
+      ) {
+      log.error(resources.TENANT_PASSWORD_MISSING);
+      return cb(new Error(resources.TENANT_PASSWORD_MISSING), null);
     }
 
     const url = this.authConfig.params.endpoint.url;
@@ -208,18 +304,18 @@ class IdmAuth extends Auth {
       },
       (error, response, body) => {
         if (error) {
-          log.info(`Error while authenticating against ${url}.`);
+          log.error(`Error while authenticating against ${url}.`);
           return cb(error, null);
         }
 
-        if (response && response.statusCode >= 200 && response.statusCode <= 299) {
+        if (response && _.includes(validAuthReturnCodes, response.statusCode)) {
           // Successfully authenticated
           log.info(`Successfully authenticated against ${url}.`);
           log.debug(body);
           return cb(null, this.formatResponse(response));
         }
 
-        return cb(new Error(`Authentication unsuccessful for ${url}.`), null);
+        return cb(null, null);
       }
     );
   }
@@ -257,4 +353,4 @@ let authenticateAgainst = (integration, user, authConfig, secrets, cb) => {
   }
 };
 
-module.exports = {authenticateAgainst, authMethods, supportedVerbs};
+module.exports = {authenticateAgainst, authMethods, supportedVerbs, validAuthReturnCodes};

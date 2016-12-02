@@ -587,11 +587,58 @@ describe('Auth Service endpoint authentication test for failure', function() {
         done();
       });
   });
-  it('should store the secret given valid credentials', function(done) {
+  it('should not store the secret given invalid credentials', function(done) {
     request
       .post('/secrets')
       .send({"secrets": secret, "token": token})
       .expect(401, done);
+  });
+  it('should not store the secret if `verb` is not specified', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "basic_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
   });
 });
 

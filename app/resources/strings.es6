@@ -66,3 +66,21 @@ exports.SECRETS_UNAUTHORIZED_MSG = `Error authentication against integration <in
 exports.SECRETS_INTERNAL_ERROR_MSG = `There was an internal server error while retrieving secrests at /secrets/<user_name>/<integration_name>`;
 exports.DEFAULT_ISSUER = "HE_DEFAULT_ISSUER";
 exports.DEFAULT_AUDIENCE = "HE_DEFAULT_AUDIENCE";
+
+/*
+ *   Strings for authentication module
+ */
+exports.SECRETS_MISSING = "Secrets missing from payload.";
+exports.PARAMS_MISSING = "Parameters missing from payload.";
+exports.ENDPOINT_MISSING = "Endpoint missing from parameter list";
+exports.URL_MISSING = "Endpoint parameters not provided in integration registration.";
+exports.VERB_MISSING = "Verb parameters not provided in integration registration.";
+exports.VERB_NOT_SUPPORTED = "VERB not supported.";
+exports.USERNAME_MISSING = "Username missing from secrets payload.";
+exports.PASSWORD_MISSING = "Password missing from secrets payload.";
+exports.USER_STRUCTURE_MISSING = "USER object was not provided.";
+exports.TENANT_STRUCTURE_MISSING = "TENANT object was not provided.";
+exports.USER_USERNAME_MISSING = "Credentials are malformed in the USER object. Username missing.";
+exports.USER_PASSWORD_MISSING = "Credentials are malformed in the USER object. Password missing.";
+exports.TENANT_USERNAME_MISSING = "Credentials are malformed in the TENANT object. Username missing.";
+exports.TENANT_PASSWORD_MISSING = "Credentials are malformed in the TENANT object. Password missing.";
