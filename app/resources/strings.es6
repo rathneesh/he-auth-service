@@ -84,3 +84,5 @@ exports.USER_USERNAME_MISSING = "Credentials are malformed in the USER object. U
 exports.USER_PASSWORD_MISSING = "Credentials are malformed in the USER object. Password missing.";
 exports.TENANT_USERNAME_MISSING = "Credentials are malformed in the TENANT object. Username missing.";
 exports.TENANT_PASSWORD_MISSING = "Credentials are malformed in the TENANT object. Password missing.";
+exports.UNEXPECTED_RESPONSE_FROM_AS = "Unexpected response from auth server.";
+exports.UNEXPECTED_STATUS_CODE_FROM_AS = "Unexpected 2xx status code from authentication server.";

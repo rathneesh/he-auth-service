@@ -308,11 +308,23 @@ class IdmAuth extends Auth {
           return cb(error, null);
         }
 
-        if (response && _.includes(validAuthReturnCodes, response.statusCode)) {
+        if (response && response.statusCode === 200) {
+          if (
+            !_.has(body, 'token') ||
+            !_.has(body.token, 'id') ||
+            !_.has(body, 'refreshToken')
+            ) {
+            log.error(body.token);
+            return cb(new Error(resources.UNEXPECTED_RESPONSE_FROM_AS), null);
+          }
+
           // Successfully authenticated
           log.info(`Successfully authenticated against ${url}.`);
           log.debug(body);
-          return cb(null, this.formatResponse(response));
+          return cb(null, this.formatResponse(body));
+        } else if (_.includes(validAuthReturnCodes, response.statusCode)) {
+          log.error(resources.UNEXPECTED_STATUS_CODE_FROM_AS);
+          return cb(new Error(resources.UNEXPECTED_STATUS_CODE_FROM_AS), null);
         }
 
         return cb(null, null);
