@@ -30,6 +30,7 @@ const async = require('async');
 // Disable eslint to allow for Nock generated objects
 /* eslint-disable quote-props*/
 /* eslint-disable no-unused-expressions */
+/* eslint-disable no-useless-escape */
 /* eslint-disable camelcase */
 
 process.env.HE_ISSUER = "issue";
@@ -406,7 +407,7 @@ const idmAuthExampleResponse = {
       }
     ]
   }
-}
+};
 
 nock('http://idmauth', {"encodedQueryParams": true})
   .get('/success')
