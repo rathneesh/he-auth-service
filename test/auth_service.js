@@ -323,11 +323,35 @@ nock('http://vault:8200', {"encodedQueryParams": true})
     "integration_info": {
       "name": "integration",
       "auth": {
+        "type": "basic_auth",
+        "params": {
+        }
+      }
+    },
+    "user_info": {
+      "id": "abcd"
+    },
+    "secrets": {
+      "token": "YWRtaW46YWRtaW4="
+    }
+  })
+  .reply(204, "", ['Content-Type',
+    'application/json',
+    'Date',
+    'Sat, 12 Nov 2016 03:10:08 GMT',
+    'Connection',
+    'close']);
+
+nock('http://vault:8200', {"encodedQueryParams": true})
+  .put('/v1/secret/abcd/integration', {
+    "integration_info": {
+      "name": "integration",
+      "auth": {
         "type": "idm_auth",
         "params": {
           "endpoint": {
             url: "http:\/\/idmauth\/success",
-            verb: "GET"
+            verb: "POST"
           }
         }
       }
@@ -336,8 +360,8 @@ nock('http://vault:8200', {"encodedQueryParams": true})
       "id": "abcd"
     },
     "secrets": {
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXUyJ9.eyJjb20uaHAuY2xvdWQ6cm9sZTpWVUxORVJBQklMSVRZX1BPTElDWV9BVVRIT1JTIjp0cnVlLCJjb20uaHAuY2xvdWQ6cm9sZTpQQVRDSF9QT0xJQ1lfQVVUSE9SUyI6dHJ1ZSwiY29tLmhwLmNsb3VkOnJvbGU6UEFDS0FHRV9DT05URU5UX0FVVEhPUlMiOnRydWUsImNvbS5ocC5jbG91ZDpyb2xlOkNPTlRST0xfQVVUSE9SUyI6dHJ1ZSwiY29tLmhwLmNsb3VkOnJvbGU6UkVTT1VSQ0VfQURNSU5JU1RSQVRPUlMiOnRydWUsImlhdCI6MTQ2NDE5NDUxMiwiY29tLmhwLmNsb3VkOnJvbGU6QlVTSU5FU1NfQURNSU5JU1RSQVRPUlMiOnRydWUsImNvbS5ocC5jbG91ZDpyb2xlOkJVU0lORVNTX1NFUlZJQ0VfQVVUSE9SUyI6dHJ1ZSwiZXhwIjoxNDY0MTk2MzEyLCJjb20uaHAuY2xvdWQ6cm9sZTpQT0xJQ1lfQVVUSE9SUyI6dHJ1ZSwicHJuIjoiaXRvY2FkbWluIiwiY29tLmhwLmNsb3VkOnRlbmFudCI6eyJpZCI6IjllY2E0NjY1LWUyMGMtNGFjZi1iYzkwLTEyNDhkYjdlNTIxNyIsIm5hbWUiOiJwdWJsaWMiLCJlbmFibGVkIjp0cnVlfSwicmVmcmVzaF90b2tlbiI6IlNWK3FWL1d1VVVFUDdXcEYrc2xDL0VZZ2Nra2hmZzBOUC9yQ2NnV3o2VW1Cb2NyeUNBdXdaU1Q5TnVnbVJrcGVqdEhFblBPYlNTeEQvRmdkUThzL2czQzVQZ0JldnltMFhiOFJTQjdoRGJaUVdyV09GNm1HSXFRRW9wN1lCL0FyayswaEp6Q0pGdkNMQlAxMFlTRXcvS25RNndXdEc3Z213VU15SmYzK0JrbTVaaDFWaWY0aDYxNjlVS3lHVWlic1NiallaUEdNQ2xMWUl4OVVaMmVHRmlYUzd2R0NGdWtUQTM4ZHdNMGZjS1kwTWZJSk1GTTBHeUg0ejlEdFpOTFJhRTBYek1iRkFhK1dCU3Z6Tnlna0ZGUkczSGVWcFMvbGsydUVpb1huYkFDV29IUVRkWi9qOWthQ281N2JySW9YbGRDUEF6RitDcGQyaG9jVnhnRkRTcFFSOU9nQXo5SXhsR1RXUENnQW1Rd3FRSjFOdTBqRjE2WWJuUE9nNmdVN0g1ZU9taVllZUdScU1JOHR1MWFmdlZrb3p2eXQ5Sml0Ukl5clBuaU5oMkpGUmJsZmJ3RmxvMlR2WnZSMUs0VnhOUnhjV1Z1VGhra1RlcVRkRWJWN2tpOTZiUUVnRStnYzVxS2hyMFJGYUdBR3NXTTBvTUJFTUx3MXl2d1RSaEVLUkdmZC9ySmVMcnBidDRsTmRoSEFxK0MxVTJacjIwNHlqK0wzTWVIbDVNWEt4cFQvWmx5d3dVa3o2Y0tpYkdlWHUwQy9NdUUxSDhzYzJTTjRjTTNwbVlHRm5hOTdGVjRHYW4xLzBLRkdIenVua2QwSjNrMzRxTXdMckV2RXRBb2tsK3M4UFlnT3p5Qng5VGY3NnZ6Nng5V3JkQWUzZFczaEtoWGczNFJRUy8wME1uS3JNdFY1RDZIMFJDa01sVjBJQlorU0hFRm9NS1UzZ0JPSTNYdWcxWWJVeFRMc3l6OXVJMDZ1TXJ2OGhsNGN6WE43U0F4YThRUEpJN0R5TjdXQStOOUZ2bE9WeitWY3g0STVmYzB4VldLWmcyWFVFZE5aZ2N2bllYdHNtYktOa1BoTUlSNnlzUmlCbmtEV1dhcjFQaDA4MmJlMnJkdmJ3QTlDK1JyZjJIclJNZG1GM1EwMHNZL3NOTFNrV25BV1JUemhPTHhzUHc9PSIsImNvbS5ocC5jbG91ZDpyb2xlOlNZU1RFTV9BRE1JTklTVFJBVE9SUyI6dHJ1ZSwiY29tLmhwLmNsb3VkOnJvbGU6dHJ1ZSI6dHJ1ZSwiY29tLmhwLmNsb3VkOnJvbGU6Q1ZFX0NPTlRFTlRfQVVUSE9SUyI6dHJ1ZX0.50JqFIqmqNTMta-XvOlxYtq0C5OdrLIQrK0vg-5-Suw",
-      "refreshToken": "SV+qV\/WuUUEP7WpF+slC\/EYgckkhfg0NP\/rCcgWz6UmBocryCAuwZST9NugmRkpejtHEnPObSSxD\/FgdQ8s\/g3C5PgBevym0Xb8RSB7hDbZQWrWOF6mGIqQEop7YB\/Ark+0hJzCJFvCLBP10YSEw\/KnQ6wWtG7gmwUMyJf3+Bkm5Zh1Vif4h6169UKyGUibsSbjYZPGMClLYIx9UZ2eGFiXS7vGCFukTA38dwM0fcKY0MfIJMFM0GyH4z9DtZNLRaE0XzMbFAa+WBSvzNygkFFRG3HeVpS\/lk2uEioXnbACWoHQTdZ\/j9kaCo57brIoXldCPAzF+Cpd2hocVxgFDSpQR9OgAz9IxlGTWPCgAmQwqQJ1Nu0jF16YbnPOg6gU7H5eOmiYeeGRqMI8tu1afvVkozvyt9JitRIyrPniNh2JFRblfbwFlo2TvZvR1K4VxNRxcWVuThkkTeqTdEbV7ki96bQEgE+gc5qKhr0RFaGAGsWM0oMBEMLw1yvwTRhEKRGfd\/rJeLrpbt4lNdhHAq+C1U2Zr204yj+L3MeHl5MXKxpT\/ZlywwUkz6cKibGeXu0C\/MuE1H8sc2SN4cM3pmYGFna97FV4Gan1\/0KFGHzunkd0J3k34qMwLrEvEtAokl+s8PYgOzyBx9Tf76vz6x9WrdAe3dW3hKhXg34RQS\/00MnKrMtV5D6H0RCkMlV0IBZ+SHEFoMKU3gBOI3Xug1YbUxTLsyz9uI06uMrv8hl4czXN7SAxa8QPJI7DyN7WA+N9FvlOVz+Vcx4I5fc0xVWKZg2XUEdNZgcvnYXtsmbKNkPhMIR6ysRiBnkDWWar1Ph082be2rdvbwA9C+Rrf2HrRMdmF3Q00sY\/sNLSkWnAWRTzhOLxsPw=="
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
+      "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ"
     }
   })
   .reply(204, "", ['Content-Type',
@@ -348,63 +372,63 @@ nock('http://vault:8200', {"encodedQueryParams": true})
     'close']);
 
 const idmAuthExampleResponse = {
-  "refreshToken": "SV+qV/WuUUEP7WpF+slC/EYgckkhfg0NP/rCcgWz6UmBocryCAuwZST9NugmRkpejtHEnPObSSxD/FgdQ8s/g3C5PgBevym0Xb8RSB7hDbZQWrWOF6mGIqQEop7YB/Ark+0hJzCJFvCLBP10YSEw/KnQ6wWtG7gmwUMyJf3+Bkm5Zh1Vif4h6169UKyGUibsSbjYZPGMClLYIx9UZ2eGFiXS7vGCFukTA38dwM0fcKY0MfIJMFM0GyH4z9DtZNLRaE0XzMbFAa+WBSvzNygkFFRG3HeVpS/lk2uEioXnbACWoHQTdZ/j9kaCo57brIoXldCPAzF+Cpd2hocVxgFDSpQR9OgAz9IxlGTWPCgAmQwqQJ1Nu0jF16YbnPOg6gU7H5eOmiYeeGRqMI8tu1afvVkozvyt9JitRIyrPniNh2JFRblfbwFlo2TvZvR1K4VxNRxcWVuThkkTeqTdEbV7ki96bQEgE+gc5qKhr0RFaGAGsWM0oMBEMLw1yvwTRhEKRGfd/rJeLrpbt4lNdhHAq+C1U2Zr204yj+L3MeHl5MXKxpT/ZlywwUkz6cKibGeXu0C/MuE1H8sc2SN4cM3pmYGFna97FV4Gan1/0KFGHzunkd0J3k34qMwLrEvEtAokl+s8PYgOzyBx9Tf76vz6x9WrdAe3dW3hKhXg34RQS/00MnKrMtV5D6H0RCkMlV0IBZ+SHEFoMKU3gBOI3Xug1YbUxTLsyz9uI06uMrv8hl4czXN7SAxa8QPJI7DyN7WA+N9FvlOVz+Vcx4I5fc0xVWKZg2XUEdNZgcvnYXtsmbKNkPhMIR6ysRiBnkDWWar1Ph082be2rdvbwA9C+Rrf2HrRMdmF3Q00sY/sNLSkWnAWRTzhOLxsPw==",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
   "token": {
     "expires": "2016-05-25T17:11:52.000Z",
-    "id": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXUyJ9.eyJjb20uaHAuY2xvdWQ6cm9sZTpWVUxORVJBQklMSVRZX1BPTElDWV9BVVRIT1JTIjp0cnVlLCJjb20uaHAuY2xvdWQ6cm9sZTpQQVRDSF9QT0xJQ1lfQVVUSE9SUyI6dHJ1ZSwiY29tLmhwLmNsb3VkOnJvbGU6UEFDS0FHRV9DT05URU5UX0FVVEhPUlMiOnRydWUsImNvbS5ocC5jbG91ZDpyb2xlOkNPTlRST0xfQVVUSE9SUyI6dHJ1ZSwiY29tLmhwLmNsb3VkOnJvbGU6UkVTT1VSQ0VfQURNSU5JU1RSQVRPUlMiOnRydWUsImlhdCI6MTQ2NDE5NDUxMiwiY29tLmhwLmNsb3VkOnJvbGU6QlVTSU5FU1NfQURNSU5JU1RSQVRPUlMiOnRydWUsImNvbS5ocC5jbG91ZDpyb2xlOkJVU0lORVNTX1NFUlZJQ0VfQVVUSE9SUyI6dHJ1ZSwiZXhwIjoxNDY0MTk2MzEyLCJjb20uaHAuY2xvdWQ6cm9sZTpQT0xJQ1lfQVVUSE9SUyI6dHJ1ZSwicHJuIjoiaXRvY2FkbWluIiwiY29tLmhwLmNsb3VkOnRlbmFudCI6eyJpZCI6IjllY2E0NjY1LWUyMGMtNGFjZi1iYzkwLTEyNDhkYjdlNTIxNyIsIm5hbWUiOiJwdWJsaWMiLCJlbmFibGVkIjp0cnVlfSwicmVmcmVzaF90b2tlbiI6IlNWK3FWL1d1VVVFUDdXcEYrc2xDL0VZZ2Nra2hmZzBOUC9yQ2NnV3o2VW1Cb2NyeUNBdXdaU1Q5TnVnbVJrcGVqdEhFblBPYlNTeEQvRmdkUThzL2czQzVQZ0JldnltMFhiOFJTQjdoRGJaUVdyV09GNm1HSXFRRW9wN1lCL0FyayswaEp6Q0pGdkNMQlAxMFlTRXcvS25RNndXdEc3Z213VU15SmYzK0JrbTVaaDFWaWY0aDYxNjlVS3lHVWlic1NiallaUEdNQ2xMWUl4OVVaMmVHRmlYUzd2R0NGdWtUQTM4ZHdNMGZjS1kwTWZJSk1GTTBHeUg0ejlEdFpOTFJhRTBYek1iRkFhK1dCU3Z6Tnlna0ZGUkczSGVWcFMvbGsydUVpb1huYkFDV29IUVRkWi9qOWthQ281N2JySW9YbGRDUEF6RitDcGQyaG9jVnhnRkRTcFFSOU9nQXo5SXhsR1RXUENnQW1Rd3FRSjFOdTBqRjE2WWJuUE9nNmdVN0g1ZU9taVllZUdScU1JOHR1MWFmdlZrb3p2eXQ5Sml0Ukl5clBuaU5oMkpGUmJsZmJ3RmxvMlR2WnZSMUs0VnhOUnhjV1Z1VGhra1RlcVRkRWJWN2tpOTZiUUVnRStnYzVxS2hyMFJGYUdBR3NXTTBvTUJFTUx3MXl2d1RSaEVLUkdmZC9ySmVMcnBidDRsTmRoSEFxK0MxVTJacjIwNHlqK0wzTWVIbDVNWEt4cFQvWmx5d3dVa3o2Y0tpYkdlWHUwQy9NdUUxSDhzYzJTTjRjTTNwbVlHRm5hOTdGVjRHYW4xLzBLRkdIenVua2QwSjNrMzRxTXdMckV2RXRBb2tsK3M4UFlnT3p5Qng5VGY3NnZ6Nng5V3JkQWUzZFczaEtoWGczNFJRUy8wME1uS3JNdFY1RDZIMFJDa01sVjBJQlorU0hFRm9NS1UzZ0JPSTNYdWcxWWJVeFRMc3l6OXVJMDZ1TXJ2OGhsNGN6WE43U0F4YThRUEpJN0R5TjdXQStOOUZ2bE9WeitWY3g0STVmYzB4VldLWmcyWFVFZE5aZ2N2bllYdHNtYktOa1BoTUlSNnlzUmlCbmtEV1dhcjFQaDA4MmJlMnJkdmJ3QTlDK1JyZjJIclJNZG1GM1EwMHNZL3NOTFNrV25BV1JUemhPTHhzUHc9PSIsImNvbS5ocC5jbG91ZDpyb2xlOlNZU1RFTV9BRE1JTklTVFJBVE9SUyI6dHJ1ZSwiY29tLmhwLmNsb3VkOnJvbGU6dHJ1ZSI6dHJ1ZSwiY29tLmhwLmNsb3VkOnJvbGU6Q1ZFX0NPTlRFTlRfQVVUSE9SUyI6dHJ1ZX0.50JqFIqmqNTMta-XvOlxYtq0C5OdrLIQrK0vg-5-Suw",
+    "id": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
     "issued_at": "2016-05-25T16:41:52.375Z",
     "tenant": {
       "enabled": true,
-      "id": "9eca4665-e20c-4acf-bc90-1248db7e5217",
+      "id": "asdcadssa-asdc-asdcasd-asdcsadc-sadcdsac",
       "name": "public"
     }
   },
   "user": {
-    "id": "b60f3445-d1ce-4a3a-8db4-47eb87c987d4",
-    "name": "itocadmin",
+    "id": "sadcas-asdfv-wth45tg-wtw4t-qhqo38f873",
+    "name": "hangout",
     "roles": [
       {
-        "id": "10c66f16-b36a-4377-ba39-a67336a53f55",
-        "name": "BUSINESS_ADMINISTRATORS"
+        "id": "asvfvfv-kfvmd-riue-weuhwe-aerverdfv",
+        "name": "DFVSDFV"
       },
       {
-        "id": "487ee85e-e2b4-4f88-a60b-705af78fdcfc",
-        "name": "BUSINESS_SERVICE_AUTHORS"
+        "id": "aferbebt-67jryryr-54y45gr-w45gw4rg-wtwrthrt",
+        "name": "DSFVDS"
       },
       {
-        "id": "70fcf513-da73-4493-b938-14b84c3426cd",
-        "name": "CONTROL_AUTHORS"
+        "id": "98jer9ve-76gevyev-6532vgew-09erjvef-23fweasdvf",
+        "name": "SDFVDSFV"
       },
       {
-        "id": "99fbb38e-ba01-4458-b0be-1e2d900ac926",
-        "name": "CVE_CONTENT_AUTHORS"
+        "id": "347f6gebhf-45uyg-suvybrv-weuyfvwe-sdycvw",
+        "name": "DFVSSDFV"
       },
       {
-        "id": "502fd9fa-f037-4167-88e5-4f4118eb757c",
-        "name": "PACKAGE_CONTENT_AUTHORS"
+        "id": "ehvwf-sdjhvcbsd-sdjkcks-fvknd-erbvke",
+        "name": "SDFVSDFV"
       },
       {
-        "id": "f42fd36e-fe10-45ad-b7bf-a3a498b9b2bb",
-        "name": "PATCH_POLICY_AUTHORS"
+        "id": "sdjvhbdv-sdvhbj-weoifwe-sejchb-weucybw",
+        "name": "DSFVDSFV"
       },
       {
-        "id": "dcaae23e-6b7e-47cc-80c1-0a2403ca7afe",
-        "name": "POLICY_AUTHORS"
+        "id": "wefjhbw-webhsd-wejsd-736fgyr-3265df",
+        "name": "FGNFG"
       },
       {
-        "id": "1ff86555-adf7-4f83-8c25-64fb0eb157bf",
-        "name": "RESOURCE_ADMINISTRATORS"
+        "id": "43f67gew-2376ge-092j3iowe-23dsds-3746gfds",
+        "name": "AWKVNAF"
       },
       {
-        "id": "fc0cabdb-8ae5-43fd-bd60-b34d92626191",
-        "name": "SYSTEM_ADMINISTRATORS"
+        "id": "23f5tygw-4578gyub-47gysd-23ytdv-23tfysd",
+        "name": "AWUEYVDS"
       },
       {
-        "id": "b1f49102-1ff7-4116-b71d-92c348a044f9",
-        "name": "VULNERABILITY_POLICY_AUTHORS"
+        "id": "3476gyd-45jfdd-346tygs-265tyg-7845yuhj",
+        "name": "AJSVBHDF"
       },
       {
-        "id": "167ee8cc-6c5c-4465-a0d5-63ab9ff9e783",
+        "id": "9203iosd-23fwdf-76tyrgh-8iuj-26tygsd",
         "name": "true"
       }
     ]
@@ -412,7 +436,7 @@ const idmAuthExampleResponse = {
 };
 
 nock('http://idmauth', {"encodedQueryParams": true})
-  .get('/success')
+  .post('/success')
   .reply(200, idmAuthExampleResponse, ['Server',
     'nginx',
     'Date',
@@ -429,7 +453,7 @@ nock('http://idmauth', {"encodedQueryParams": true})
     'true']);
 
 nock('http://idmauth', {"encodedQueryParams": true})
-  .get('/failure')
+  .post('/failure')
   .reply(401, idmAuthExampleResponse, ['Server',
     'nginx',
     'Date',
@@ -770,6 +794,97 @@ describe('Auth Service endpoint authentication test for failure', function() {
         .expect(500, done);
     });
   });
+  it('should not store the secret if `url` is not specified', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "basic_auth",
+              "params": {
+                "endpoint": {
+                  verb: "GET"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('should store the secret if `endpoint` is not specified', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "basic_auth",
+              "params": {
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(201, done);
+    });
+  });
 });
 
 describe('Test IDM authentication', function() {
@@ -830,7 +945,7 @@ describe('Test IDM authentication', function() {
               "type": "idm_auth",
               "params": {
                 "endpoint": {
-                  verb: "GET"
+                  verb: "POST"
                 }
               }
             }
@@ -949,7 +1064,7 @@ describe('Test IDM authentication', function() {
               "params": {
                 "endpoint": {
                   url: "http://basicauth/success",
-                  verb: "GET"
+                  verb: "POST"
                 }
               }
             }
@@ -1018,7 +1133,7 @@ describe('Test IDM authentication', function() {
               "params": {
                 "endpoint": {
                   url: "http://basicauth/success",
-                  verb: "GET"
+                  verb: "POST"
                 }
               }
             }
@@ -1087,7 +1202,7 @@ describe('Test IDM authentication', function() {
               "params": {
                 "endpoint": {
                   url: "http://basicauth/success",
-                  verb: "GET"
+                  verb: "POST"
                 }
               }
             }
@@ -1153,7 +1268,7 @@ describe('Test IDM authentication', function() {
               "params": {
                 "endpoint": {
                   url: "http://basicauth/success",
-                  verb: "GET"
+                  verb: "POST"
                 }
               }
             }
@@ -1222,7 +1337,7 @@ describe('Test IDM authentication', function() {
               "params": {
                 "endpoint": {
                   url: "http://basicauth/success",
-                  verb: "GET"
+                  verb: "POST"
                 }
               }
             }
@@ -1291,6 +1406,76 @@ describe('Test IDM authentication', function() {
               "params": {
                 "endpoint": {
                   url: "http://basicauth/success",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if an unsupported http verb is given.', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          },
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://idmauth/success",
                   verb: "GET"
                 }
               }
@@ -1361,7 +1546,7 @@ describe('Test IDM authentication', function() {
               "params": {
                 "endpoint": {
                   url: "http://idmauth/success",
-                  verb: "GET"
+                  verb: "POST"
                 }
               }
             }
@@ -1431,7 +1616,7 @@ describe('Test IDM authentication', function() {
               "params": {
                 "endpoint": {
                   url: "http://idmauth/failure",
-                  verb: "GET"
+                  verb: "POST"
                 }
               }
             }

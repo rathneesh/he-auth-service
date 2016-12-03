@@ -70,19 +70,20 @@ exports.DEFAULT_AUDIENCE = "HE_DEFAULT_AUDIENCE";
 /*
  *   Strings for authentication module
  */
-exports.SECRETS_MISSING = "Secrets missing from payload.";
-exports.PARAMS_MISSING = "Parameters missing from payload.";
-exports.ENDPOINT_MISSING = "Endpoint missing from parameter list";
-exports.URL_MISSING = "Endpoint parameters not provided in integration registration.";
-exports.VERB_MISSING = "Verb parameters not provided in integration registration.";
-exports.VERB_NOT_SUPPORTED = "VERB not supported.";
-exports.USERNAME_MISSING = "Username missing from secrets payload.";
-exports.PASSWORD_MISSING = "Password missing from secrets payload.";
-exports.USER_STRUCTURE_MISSING = "USER object was not provided.";
-exports.TENANT_STRUCTURE_MISSING = "TENANT object was not provided.";
-exports.USER_USERNAME_MISSING = "Credentials are malformed in the USER object. Username missing.";
-exports.USER_PASSWORD_MISSING = "Credentials are malformed in the USER object. Password missing.";
-exports.TENANT_USERNAME_MISSING = "Credentials are malformed in the TENANT object. Username missing.";
-exports.TENANT_PASSWORD_MISSING = "Credentials are malformed in the TENANT object. Password missing.";
-exports.UNEXPECTED_RESPONSE_FROM_AS = "Unexpected response from auth server.";
-exports.UNEXPECTED_STATUS_CODE_FROM_AS = "Unexpected 2xx status code from authentication server.";
+exports.INTEGRATION_AUTH_SECRETS_MISSING = "Secrets missing from payload.";
+exports.INTEGRATION_AUTH_INFO_MISSING = "Information to perform authentication is missing from payload (token).";
+exports.INTEGRATION_AUTH_ENDPOINT_MISSING = "Endpoint missing from parameter list";
+exports.INTEGRATION_AUTH_URL_MISSING = "Endpoint url not provided in integration registration.";
+exports.INTEGRATION_AUTH_VERB_MISSING = "Endpoint verb parameter missing from integration registration.";
+exports.INTEGRATION_AUTH_VERB_NOT_SUPPORTED = "Endpoint verb parameter not supported.";
+exports.INTEGRATION_AUTH_USERNAME_MISSING = "Username missing from secrets payload.";
+exports.INTEGRATION_AUTH_PASSWORD_MISSING = "Password missing from secrets payload.";
+exports.INTEGRATION_AUTH_USER_STRUCTURE_MISSING = "USER object was not provided.";
+exports.INTEGRATION_AUTH_TENANT_STRUCTURE_MISSING = "TENANT object was not provided.";
+exports.INTEGRATION_AUTH_USER_USERNAME_MISSING = "Credentials are malformed in the USER object. Username missing.";
+exports.INTEGRATION_AUTH_USER_PASSWORD_MISSING = "Credentials are malformed in the USER object. Password missing.";
+exports.INTEGRATION_AUTH_TENANT_USERNAME_MISSING = "Credentials are malformed in the TENANT object. Username missing.";
+exports.INTEGRATION_AUTH_TENANT_PASSWORD_MISSING = "Credentials are malformed in the TENANT object. Password missing.";
+exports.INTEGRATION_AUTH_UNEXPECTED_RESPONSE_FROM_AS = "Unexpected response from auth server.";
+exports.INTEGRATION_AUTH_UNEXPECTED_STATUS_CODE_FROM_AS = "Unexpected 2xx status code from authentication server.";
+exports.INTEGRATION_AUTH_SKIPPING_AUTHENTICATION = "Endpoint missing from parameter list. Skipping authentication step.";
