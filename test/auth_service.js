@@ -24,11 +24,13 @@ const nock = require('nock');
 const expect = require('chai').expect;
 const encryptUtil = require('./../app/routes/auth/encrypt.es6');
 const fs = require('fs');
+const async = require('async');
 
 // TODO: add test for TTL expiration.
 // Disable eslint to allow for Nock generated objects
 /* eslint-disable quote-props*/
 /* eslint-disable no-unused-expressions */
+/* eslint-disable no-useless-escape */
 /* eslint-disable camelcase */
 
 process.env.HE_ISSUER = "issue";
@@ -53,6 +55,8 @@ if (process.env.HTTP_PROXY || process.env.http_proxy) {
   process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',vault' : 'vault';
   process.env.NO_PROXY = process.env.NO_PROXY ? process.env.NO_PROXY + ',basicauth' : 'basicauth';
   process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',basicauth' : 'basicauth';
+  process.env.NO_PROXY = process.env.NO_PROXY ? process.env.NO_PROXY + ',idmauth' : 'idmauth';
+  process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',idmauth' : 'idmauth';
 }
 
 nock('http://vault:8200', {"encodedQueryParams": true})
@@ -293,7 +297,10 @@ nock('http://vault:8200', {"encodedQueryParams": true})
       "auth": {
         "type": "basic_auth",
         "params": {
-          "endpoint": "http://basicauth/success"
+          "endpoint": {
+            url: "http://basicauth/success",
+            verb: "GET"
+          }
         }
       }
     },
@@ -311,13 +318,164 @@ nock('http://vault:8200', {"encodedQueryParams": true})
     'Connection',
     'close']);
 
+nock('http://vault:8200', {"encodedQueryParams": true})
+  .put('/v1/secret/abcd/integration', {
+    "integration_info": {
+      "name": "integration",
+      "auth": {
+        "type": "basic_auth",
+        "params": {
+        }
+      }
+    },
+    "user_info": {
+      "id": "abcd"
+    },
+    "secrets": {
+      "token": "YWRtaW46YWRtaW4="
+    }
+  })
+  .reply(204, "", ['Content-Type',
+    'application/json',
+    'Date',
+    'Sat, 12 Nov 2016 03:10:08 GMT',
+    'Connection',
+    'close']);
+
+nock('http://vault:8200', {"encodedQueryParams": true})
+  .put('/v1/secret/abcd/integration', {
+    "integration_info": {
+      "name": "integration",
+      "auth": {
+        "type": "idm_auth",
+        "params": {
+          "endpoint": {
+            url: "http:\/\/idmauth\/success",
+            verb: "POST"
+          }
+        }
+      }
+    },
+    "user_info": {
+      "id": "abcd"
+    },
+    "secrets": {
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
+      "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ"
+    }
+  })
+  .reply(204, "", ['Content-Type',
+    'application/json',
+    'Date',
+    'Sat, 12 Nov 2016 03:10:08 GMT',
+    'Connection',
+    'close']);
+
+const idmAuthExampleResponse = {
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
+  "token": {
+    "expires": "2016-05-25T17:11:52.000Z",
+    "id": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
+    "issued_at": "2016-05-25T16:41:52.375Z",
+    "tenant": {
+      "enabled": true,
+      "id": "asdcadssa-asdc-asdcasd-asdcsadc-sadcdsac",
+      "name": "public"
+    }
+  },
+  "user": {
+    "id": "sadcas-asdfv-wth45tg-wtw4t-qhqo38f873",
+    "name": "hangout",
+    "roles": [
+      {
+        "id": "asvfvfv-kfvmd-riue-weuhwe-aerverdfv",
+        "name": "DFVSDFV"
+      },
+      {
+        "id": "aferbebt-67jryryr-54y45gr-w45gw4rg-wtwrthrt",
+        "name": "DSFVDS"
+      },
+      {
+        "id": "98jer9ve-76gevyev-6532vgew-09erjvef-23fweasdvf",
+        "name": "SDFVDSFV"
+      },
+      {
+        "id": "347f6gebhf-45uyg-suvybrv-weuyfvwe-sdycvw",
+        "name": "DFVSSDFV"
+      },
+      {
+        "id": "ehvwf-sdjhvcbsd-sdjkcks-fvknd-erbvke",
+        "name": "SDFVSDFV"
+      },
+      {
+        "id": "sdjvhbdv-sdvhbj-weoifwe-sejchb-weucybw",
+        "name": "DSFVDSFV"
+      },
+      {
+        "id": "wefjhbw-webhsd-wejsd-736fgyr-3265df",
+        "name": "FGNFG"
+      },
+      {
+        "id": "43f67gew-2376ge-092j3iowe-23dsds-3746gfds",
+        "name": "AWKVNAF"
+      },
+      {
+        "id": "23f5tygw-4578gyub-47gysd-23ytdv-23tfysd",
+        "name": "AWUEYVDS"
+      },
+      {
+        "id": "3476gyd-45jfdd-346tygs-265tyg-7845yuhj",
+        "name": "AJSVBHDF"
+      },
+      {
+        "id": "9203iosd-23fwdf-76tyrgh-8iuj-26tygsd",
+        "name": "true"
+      }
+    ]
+  }
+};
+
+nock('http://idmauth', {"encodedQueryParams": true})
+  .post('/success')
+  .reply(200, idmAuthExampleResponse, ['Server',
+    'nginx',
+    'Date',
+    'Sat, 12 Nov 2016 03:10:08 GMT',
+    'Content-Type',
+    'application/json',
+    'Content-Length',
+    '48',
+    'Connection',
+    'close',
+    'Access-Control-Allow-Origin',
+    '*',
+    'Access-Control-Allow-Credentials',
+    'true']);
+
+nock('http://idmauth', {"encodedQueryParams": true})
+  .post('/failure')
+  .reply(401, idmAuthExampleResponse, ['Server',
+    'nginx',
+    'Date',
+    'Sat, 12 Nov 2016 03:10:08 GMT',
+    'Content-Type',
+    'application/json',
+    'Content-Length',
+    '48',
+    'Connection',
+    'close',
+    'Access-Control-Allow-Origin',
+    '*',
+    'Access-Control-Allow-Credentials',
+    'true']);
+
 const authService = require('../server.es6');
 const request = require('supertest')(authService.app);
 
 /* eslint-disable no-undef */
 
 let token = "";
-let secret = '';
+let secret = "";
 let secretPayload = {"username": "admin", "password": "admin"};
 
 describe('Auth Service tests', function() {
@@ -506,7 +664,10 @@ describe('Auth Service endpoint authentication test', function() {
         "auth": {
           "type": "basic_auth",
           "params": {
-            "endpoint": "http://basicauth/success"
+            "endpoint": {
+              url: "http://basicauth/success",
+              verb: "GET"
+            }
           }
         }
       },
@@ -551,7 +712,10 @@ describe('Auth Service endpoint authentication test for failure', function() {
         "auth": {
           "type": "basic_auth",
           "params": {
-            "endpoint": "http://basicauth/failure"
+            "endpoint": {
+              url: "http://basicauth/failure",
+              verb: "GET"
+            }
           }
         }
       },
@@ -577,10 +741,913 @@ describe('Auth Service endpoint authentication test for failure', function() {
         done();
       });
   });
-  it('should store the secret given valid credentials', function(done) {
+  it('should not store the secret given invalid credentials', function(done) {
     request
       .post('/secrets')
       .send({"secrets": secret, "token": token})
       .expect(401, done);
+  });
+  it('should not store the secret if `verb` is not specified', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "basic_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('should not store the secret if `url` is not specified', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "basic_auth",
+              "params": {
+                "endpoint": {
+                  verb: "GET"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('should store the secret if `endpoint` is not specified', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "basic_auth",
+              "params": {
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(201, done);
+    });
+  });
+});
+
+describe('Test IDM authentication', function() {
+  it('Should fail if missing endpoint', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing url', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing verb', function(done) {
+    async.series([
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing secrets', function(done) {
+    request
+      .post('/secrets')
+      .send({"token": token})
+      .expect(500, done);
+  });
+  it('Should fail if missing user', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing username in user structure', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "password": "admin"
+          },
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing password in user structure', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin"
+          },
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing tenant', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing username in tenant structure', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          },
+          "tenant": {
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if missing password in tenant structure', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          },
+          "tenant": {
+            "username": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should fail if an unsupported http verb is given.', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          },
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://idmauth/success",
+                  verb: "GET"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
+  it('Should successfuly authenticate when payload is built correctly.', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          },
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://idmauth/success",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(201, done);
+    });
+  });
+  it('Should not allow access to an agent with incorrect credentials.', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          },
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://idmauth/failure",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(401, done);
+    });
   });
 });

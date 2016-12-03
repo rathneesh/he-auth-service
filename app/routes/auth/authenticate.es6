@@ -20,14 +20,34 @@
 //
 // END OF TERMS AND CONDITIONS
 
-const stringsResource = require('../../resources/strings.es6');
 const _ = require('lodash');
 const log = require('../../resources/fluentd.es6');
 const request = require('request');
+const resources = require('../../resources/strings.es6');
 
-const authMethods = {
-  BASIC_AUTH: 'basic_auth'
+const AUTH_METHODS = {
+  BASIC_AUTH: 'basic_auth',
+  IDM_AUTH: 'idm_auth'
 };
+
+const SUPPORTED_VERBS = {
+  GET: 'GET',
+  PUT: 'PUT',
+  POST: 'POST'
+};
+
+const VALID_AUTH_RETURN_CODES = [
+  200,
+  201,
+  202,
+  203,
+  204,
+  205,
+  206,
+  207,
+  208,
+  226
+];
 
 class Auth {
   constructor(authConfig, secrets) {
@@ -38,16 +58,20 @@ class Auth {
     if (this.authenticate === undefined) {
       throw new TypeError("Must override method `authenticate`");
     }
+
+    // Subclasses must implement a method which returns a list of expected SUCCESS status codes
+    if (this.constructor.getSuccessCodes === undefined) {
+      throw new TypeError("Must override method `getSuccessCodes`");
+    }
+
+    // Subclasses must implement a method which returns a list of valid request VERBS
+    if (this.constructor.getValidVerbs === undefined) {
+      throw new TypeError("Must override method `getValidVerbs`");
+    }
   }
 }
 
 class BasicAuth extends Auth {
-  constructor(authConfig, secrets) {
-    if (!secrets || !secrets.username || !secrets.password) {
-      throw new Error('Basic Auth requires username + password to be passed as secrets');
-    }
-    super(authConfig, secrets);
-  }
   formatResponse(response) {
     const username = this.secrets.username;
     const password = this.secrets.password;
@@ -58,31 +82,80 @@ class BasicAuth extends Auth {
     };
     return response;
   }
+  // Returns an array that contains the expected http status codes upon success
+  static getSuccessCodes() {
+    return VALID_AUTH_RETURN_CODES;
+  }
+  // Return an array of the verbs which the auth endpoint accepts
+  static getValidVerbs() {
+    return [
+      SUPPORTED_VERBS.GET,
+      SUPPORTED_VERBS.PUT,
+      SUPPORTED_VERBS.POST
+    ];
+  }
   // Returns success or failure
   // cb( error, response )
   //   where response MUST have a response.secrets.token
   authenticate(cb) {
     let response = {};
 
+    if (_.isNil(this.authConfig)) {
+      log.error(resources.INTEGRATION_AUTH_PARAMS_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_PARAMS_MISSING), null);
+    }
+
     // If no endpoint is given, authenticate successfully
-    if (!_.has(this.authConfig.params, 'endpoint')) {
-      log.info('Endpoint missing from parameter list. Skipping authentication step.');
+    if (
+      !_.has(this.authConfig, 'params.endpoint') ||
+      _.isNil(this.authConfig.params.endpoint)
+      ) {
+      log.info(resources.INTEGRATION_AUTH_SKIPPING_AUTHENTICATION);
+      log.debug(this.authConfig.params);
       return cb(null, this.formatResponse(response));
     }
 
-    if (!_.has(this.secrets, 'username')) {
-      log.info('Endpoint found but a username was not provided.');
-      return cb(new Error('Username not provided'), null);
+    if (_.isNil(this.authConfig.params.endpoint.url)) {
+      log.error(resources.INTEGRATION_AUTH_URL_MISSING);
+      log.debug(this.authConfig.params.endpoint);
+      return cb(new Error(resources.INTEGRATION_AUTH_URL_MISSING), null);
     }
 
-    if (!_.has(this.secrets, 'password')) {
-      log.info('Endpoint found but a password was not provided.');
-      return cb(new Error('Password not provided'), null);
+    if (_.isNil(this.authConfig.params.endpoint.verb)) {
+      log.error(resources.INTEGRATION_AUTH_VERB_MISSING);
+      log.debug(this.authConfig.params.endpoint);
+      return cb(new Error(resources.INTEGRATION_AUTH_VERB_MISSING), null);
     }
 
-    const endpoint = this.authConfig.params.endpoint;
+    if (!_.includes(this.constructor.getValidVerbs(), this.authConfig.params.endpoint.verb)) {
+      log.error(resources.INTEGRATION_AUTH_VERB_NOT_SUPPORTED);
+      log.debug(`No support for verb ${this.authConfig.params.endpoint.verb}`);
+      log.debug(`Supported verbs ${this.constructor.getValidVerbs()}`);
+      return cb(new Error(resources.INTEGRATION_AUTH_VERB_NOT_SUPPORTED), null);
+    }
+
+    if (_.isNil(this.secrets)) {
+      log.error(resources.INTEGRATION_AUTH_SECRETS_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_SECRETS_MISSING), null);
+    }
+
+    if (_.isNil(this.secrets.username)) {
+      log.error(resources.INTEGRATION_AUTH_USERNAME_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_USERNAME_MISSING), null);
+    }
+
+    if (
+      !_.has(this.secrets, 'password') ||
+      this.secrets.password === undefined
+      ) {
+      log.error(resources.INTEGRATION_AUTH_PASSWORD_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_PASSWORD_MISSING), null);
+    }
+
     const username = this.secrets.username;
     const password = this.secrets.password;
+    const endpoint = this.authConfig.params.endpoint.url;
+    const verb = this.authConfig.params.endpoint.verb;
 
     const base64Secrets = new Buffer(username + ":" + password).toString("base64");
     const auth = "Basic " + base64Secrets;
@@ -90,17 +163,22 @@ class BasicAuth extends Auth {
     request(
       {
         url: endpoint,
+        method: verb,
         headers: {
           Authorization: auth
         }
       },
       (error, response, body) => {
         if (error) {
-          log.info(`Error while authenticating against ${endpoint}.`);
+          log.error(`Error while authenticating against ${endpoint}.`);
           return cb(error, null);
         }
 
-        if (response && response.statusCode === 200) {
+        log.debug(`Error object ${error}`);
+        log.debug(`Response object ${response}`);
+        log.debug(`Body object ${body}`);
+
+        if (response && _.includes(this.constructor.getSuccessCodes(), response.statusCode)) {
           // Successfully authenticated
           log.info(`Successfully authenticated against ${endpoint}.`);
           log.debug(body);
@@ -113,10 +191,163 @@ class BasicAuth extends Auth {
   }
 }
 
+class IdmAuth extends Auth {
+  formatResponse(response) {
+    const token = response.token.id;
+    const refreshToken = response.refreshToken;
+    return {
+      token,
+      refreshToken
+    };
+  }
+  // Returns an array that contains the expected http status codes upon success
+  static getSuccessCodes() {
+    return [
+      200
+    ];
+  }
+  // Return an array of the verbs which the auth endpoint accepts
+  static getValidVerbs() {
+    return [
+      SUPPORTED_VERBS.POST
+    ];
+  }
+  // Returns success or failure
+  // cb( error, response )
+  //   where response MUST have a response.secrets.token
+  authenticate(cb) {
+    if (!this.authConfig || !this.authConfig.params) {
+      log.error(resources.INTEGRATION_AUTH_PARAMS_MISSING);
+      log.debug(this.authConfig);
+      return cb(new Error(resources.INTEGRATION_AUTH_PARAMS_MISSING), null);
+    }
+
+    if (!this.authConfig.params.endpoint) {
+      log.error(resources.INTEGRATION_AUTH_ENDPOINT_MISSING);
+      log.debug(this.authConfig.params);
+      return cb(new Error(resources.INTEGRATION_AUTH_ENDPOINT_MISSING), null);
+    }
+
+    if (!this.authConfig.params.endpoint.url) {
+      log.error(resources.INTEGRATION_AUTH_URL_MISSING);
+      log.debug(this.authConfig.params.endpoint);
+      return cb(new Error(resources.INTEGRATION_AUTH_URL_MISSING), null);
+    }
+
+    if (!this.authConfig.params.endpoint.verb) {
+      log.error(resources.INTEGRATION_AUTH_VERB_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_VERB_MISSING), null);
+    }
+
+    if (!_.includes(this.constructor.getValidVerbs(), this.authConfig.params.endpoint.verb)) {
+      log.error(resources.INTEGRATION_AUTH_VERB_NOT_SUPPORTED);
+      log.debug(`No support for verb ${this.authConfig.params.endpoint.verb}`);
+      log.debug(`Supported verbs ${this.constructor.getValidVerbs()}`);
+      return cb(new Error(resources.INTEGRATION_AUTH_VERB_NOT_SUPPORTED), null);
+    }
+
+    if (!this.secrets) {
+      log.error(resources.INTEGRATION_AUTH_SECRETS_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_SECRETS_MISSING), null);
+    }
+
+    if (!this.secrets.tenant) {
+      log.error(resources.INTEGRATION_AUTH_TENANT_STRUCTURE_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_TENANT_STRUCTURE_MISSING), null);
+    }
+
+    if (!this.secrets.user) {
+      log.error(resources.INTEGRATION_AUTH_USER_STRUCTURE_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_USER_STRUCTURE_MISSING), null);
+    }
+
+    if (!this.secrets.user.username) {
+      log.error(resources.INTEGRATION_AUTH_USER_USERNAME_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_USER_USERNAME_MISSING), null);
+    }
+
+    if (!this.secrets.user.password) {
+      log.error(resources.INTEGRATION_AUTH_USER_PASSWORD_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_USER_PASSWORD_MISSING), null);
+    }
+
+    if (!this.secrets.tenant.username) {
+      log.error(resources.INTEGRATION_AUTH_TENANT_USERNAME_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_TENANT_USERNAME_MISSING), null);
+    }
+
+    if (!this.secrets.tenant.password) {
+      log.error(resources.INTEGRATION_AUTH_TENANT_PASSWORD_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_TENANT_PASSWORD_MISSING), null);
+    }
+
+    const url = this.authConfig.params.endpoint.url;
+    const verb = this.authConfig.params.endpoint.verb;
+    const username = this.secrets.user.username;
+    const password = this.secrets.user.password;
+    const tenantUsername = this.secrets.tenant.username;
+    const tenantPassword = this.secrets.tenant.password;
+
+    const base64Secrets = new Buffer(tenantUsername + ":" + tenantPassword).toString("base64");
+    const auth = "Basic " + base64Secrets;
+
+    request(
+      {
+        url: url,
+        method: verb,
+        json: true,
+        body: {
+          passwordCredentials: {
+            username: username,
+            password: password
+          },
+          tenantName: tenantUsername
+        },
+        headers: {
+          Authorization: auth
+        }
+      },
+      (error, response, body) => {
+        if (error) {
+          log.error(`Error while authenticating against ${url}.`);
+          return cb(error, null);
+        }
+
+        log.debug(`Error object ${error}`);
+        log.debug(`Response object ${response}`);
+        log.debug(`Body object ${body}`);
+
+        if (response && _.includes(this.constructor.getSuccessCodes(), response.statusCode)) {
+          if (
+            !_.has(body, 'token') ||
+            !_.has(body.token, 'id') ||
+            !_.has(body, 'refreshToken')
+            ) {
+            log.error(body.token);
+            return cb(new Error(resources.INTEGRATION_AUTH_UNEXPECTED_RESPONSE_FROM_AS), null);
+          }
+
+          // Successfully authenticated
+          log.info(`Successfully authenticated against ${url}.`);
+          log.debug(body);
+          return cb(null, this.formatResponse(body));
+        } else if (_.includes(VALID_AUTH_RETURN_CODES, response.statusCode)) {
+          log.error(resources.INTEGRATION_AUTH_UNEXPECTED_STATUS_CODE_FROM_AS);
+          return cb(new Error(resources.INTEGRATION_AUTH_UNEXPECTED_STATUS_CODE_FROM_AS), null);
+        }
+
+        return cb(null, null);
+      }
+    );
+  }
+}
+
 function newAuth(authConfig, secrets) {
   switch (authConfig.type) {
-    case authMethods.BASIC_AUTH:
+    case AUTH_METHODS.BASIC_AUTH:
       return new BasicAuth(authConfig, secrets);
+    case AUTH_METHODS.IDM_AUTH:
+      return new IdmAuth(authConfig, secrets);
     default:
       return null;
   }
@@ -127,7 +358,7 @@ let authenticateAgainst = (integration, user, authConfig, secrets, cb) => {
       !_.has(integration, 'auth') || !_.isObject(secrets) || !_.has(authConfig, 'type')
   ) {
     log.error('Authentication schema not met.');
-    return cb(new Error(stringsResource.SCHEMA_REQUIREMENT_NOT_MET), null);
+    return cb(new Error(resources.SCHEMA_REQUIREMENT_NOT_MET), null);
   }
 
   let auth = newAuth(authConfig, secrets);
@@ -139,8 +370,8 @@ let authenticateAgainst = (integration, user, authConfig, secrets, cb) => {
     });
   } else {
     log.error('Selected auth object is not of type Auth.');
-    return cb(new Error(stringsResource.SCHEMA_REQUIREMENT_NOT_MET), null);
+    return cb(new Error(resources.SCHEMA_REQUIREMENT_NOT_MET), null);
   }
 };
 
-module.exports = {authenticateAgainst, authMethods};
+module.exports = {authenticateAgainst, AUTH_METHODS, SUPPORTED_VERBS, VALID_AUTH_RETURN_CODES};
