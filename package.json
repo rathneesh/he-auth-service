@@ -25,6 +25,8 @@
     "node-jose": "^0.9.1",
     "node-rsa": "^0.4.1",
     "nsp": "^2.6.1",
+    "passport": "^0.3.2",
+    "passport-http": "^0.3.0",
     "request": "^2.78.0",
     "socket.io": "^1.5.0",
     "supertest": "^2.0.0",
