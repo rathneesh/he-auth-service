@@ -1,6 +1,6 @@
 {
   "name": "he-auth-service",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Auth microservice for Hubot Enterprise",
   "main": "index.js",
   "dependencies": {
