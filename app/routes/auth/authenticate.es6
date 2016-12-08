@@ -24,6 +24,8 @@ const _ = require('lodash');
 const log = require('../../resources/fluentd.es6');
 const request = require('request');
 const resources = require('../../resources/strings.es6');
+const server = require('../../../server.es6');
+const mocks = require('./authenticate_mocks.es6');
 
 const AUTH_METHODS = {
   BASIC_AUTH: 'basic_auth',
@@ -67,6 +69,46 @@ class Auth {
     // Subclasses must implement a method which returns a list of valid request VERBS
     if (this.constructor.getValidVerbs === undefined) {
       throw new TypeError("Must override method `getValidVerbs`");
+    }
+  }
+
+  // TODO: Boot mock server and redirect to random, unused endpoint
+  redirect(options, cb) {
+    if (this.constructor.name === "BasicAuth") {
+      /* start basic auth server on 3001 */
+      /* no mock for basic auth yet, leaving empty */
+      cb(options);
+    } else if (this.constructor.name === "IdmAuth") {
+      /* start idm auth server on 3002 */
+      mocks.IdmMockServer.run(
+        "admin",
+        "admin",
+        "admin",
+        "admin",
+        port => {
+          let redirected = _.assign(options, {url: `http://localhost:${port}/`});
+          cb(redirected);
+        });
+    } else {
+      log.error(new Error(`There's no class named ${this.constructor.name} to mock.`));
+    }
+  }
+
+  // Redirect request to mocks.
+  request(options, callback) {
+    if (server.app.get('mock_auth') === true) {
+      /* redirect to mock */
+      this.redirect(options, redirected => {
+        request(
+          redirected,
+          callback
+        );
+      });
+    } else {
+      request(
+        options,
+        callback
+      );
     }
   }
 }
@@ -160,7 +202,7 @@ class BasicAuth extends Auth {
     const base64Secrets = new Buffer(username + ":" + password).toString("base64");
     const auth = "Basic " + base64Secrets;
 
-    request(
+    this.request(
       {
         url: endpoint,
         method: verb,
@@ -291,7 +333,7 @@ class IdmAuth extends Auth {
     const base64Secrets = new Buffer(tenantUsername + ":" + tenantPassword).toString("base64");
     const auth = "Basic " + base64Secrets;
 
-    request(
+    this.request(
       {
         url: url,
         method: verb,

@@ -37,6 +37,7 @@ process.env.HE_ISSUER = "issue";
 process.env.HE_AUTH_SERVICE_PORT = 0;
 process.env.HE_AUTH_NO_COLLECTOR = 1;
 process.env.HE_AUDIENCE = "audience";
+process.env.HE_AUTH_MOCK_AUTH = "true";
 process.env.HE_AUTH_SSL_PASS = "default";
 process.env.JWE_SECRETS_PATH = "./test/assets/jwe_secrets_assets.pem";
 process.env.VAULT_DEV_ROOT_TOKEN_ID = "default";
@@ -55,8 +56,8 @@ if (process.env.HTTP_PROXY || process.env.http_proxy) {
   process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',vault' : 'vault';
   process.env.NO_PROXY = process.env.NO_PROXY ? process.env.NO_PROXY + ',basicauth' : 'basicauth';
   process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',basicauth' : 'basicauth';
-  process.env.NO_PROXY = process.env.NO_PROXY ? process.env.NO_PROXY + ',idmauth' : 'idmauth';
-  process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',idmauth' : 'idmauth';
+  process.env.NO_PROXY = process.env.NO_PROXY ? process.env.NO_PROXY + ',localhost' : 'localhost';
+  process.env.no_proxy = process.env.no_proxy ? process.env.no_proxy + ',localhost' : 'localhost';
 }
 
 nock('http://vault:8200', {"encodedQueryParams": true})
@@ -370,104 +371,6 @@ nock('http://vault:8200', {"encodedQueryParams": true})
     'Sat, 12 Nov 2016 03:10:08 GMT',
     'Connection',
     'close']);
-
-const idmAuthExampleResponse = {
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
-  "token": {
-    "expires": "2016-05-25T17:11:52.000Z",
-    "id": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
-    "issued_at": "2016-05-25T16:41:52.375Z",
-    "tenant": {
-      "enabled": true,
-      "id": "asdcadssa-asdc-asdcasd-asdcsadc-sadcdsac",
-      "name": "public"
-    }
-  },
-  "user": {
-    "id": "sadcas-asdfv-wth45tg-wtw4t-qhqo38f873",
-    "name": "hangout",
-    "roles": [
-      {
-        "id": "asvfvfv-kfvmd-riue-weuhwe-aerverdfv",
-        "name": "DFVSDFV"
-      },
-      {
-        "id": "aferbebt-67jryryr-54y45gr-w45gw4rg-wtwrthrt",
-        "name": "DSFVDS"
-      },
-      {
-        "id": "98jer9ve-76gevyev-6532vgew-09erjvef-23fweasdvf",
-        "name": "SDFVDSFV"
-      },
-      {
-        "id": "347f6gebhf-45uyg-suvybrv-weuyfvwe-sdycvw",
-        "name": "DFVSSDFV"
-      },
-      {
-        "id": "ehvwf-sdjhvcbsd-sdjkcks-fvknd-erbvke",
-        "name": "SDFVSDFV"
-      },
-      {
-        "id": "sdjvhbdv-sdvhbj-weoifwe-sejchb-weucybw",
-        "name": "DSFVDSFV"
-      },
-      {
-        "id": "wefjhbw-webhsd-wejsd-736fgyr-3265df",
-        "name": "FGNFG"
-      },
-      {
-        "id": "43f67gew-2376ge-092j3iowe-23dsds-3746gfds",
-        "name": "AWKVNAF"
-      },
-      {
-        "id": "23f5tygw-4578gyub-47gysd-23ytdv-23tfysd",
-        "name": "AWUEYVDS"
-      },
-      {
-        "id": "3476gyd-45jfdd-346tygs-265tyg-7845yuhj",
-        "name": "AJSVBHDF"
-      },
-      {
-        "id": "9203iosd-23fwdf-76tyrgh-8iuj-26tygsd",
-        "name": "true"
-      }
-    ]
-  }
-};
-
-nock('http://idmauth', {"encodedQueryParams": true})
-  .post('/success')
-  .reply(200, idmAuthExampleResponse, ['Server',
-    'nginx',
-    'Date',
-    'Sat, 12 Nov 2016 03:10:08 GMT',
-    'Content-Type',
-    'application/json',
-    'Content-Length',
-    '48',
-    'Connection',
-    'close',
-    'Access-Control-Allow-Origin',
-    '*',
-    'Access-Control-Allow-Credentials',
-    'true']);
-
-nock('http://idmauth', {"encodedQueryParams": true})
-  .post('/failure')
-  .reply(401, idmAuthExampleResponse, ['Server',
-    'nginx',
-    'Date',
-    'Sat, 12 Nov 2016 03:10:08 GMT',
-    'Content-Type',
-    'application/json',
-    'Content-Length',
-    '48',
-    'Connection',
-    'close',
-    'Access-Control-Allow-Origin',
-    '*',
-    'Access-Control-Allow-Credentials',
-    'true']);
 
 const authService = require('../server.es6');
 const request = require('supertest')(authService.app);
@@ -1585,12 +1488,12 @@ describe('Test IDM authentication', function() {
       done => {
         let secretPayload = {
           "user": {
-            "username": "admin",
-            "password": "admin"
+            "username": "wrong",
+            "password": "wrong"
           },
           "tenant": {
-            "username": "admin",
-            "password": "admin"
+            "username": "wrong",
+            "password": "wrong"
           }
         };
 
