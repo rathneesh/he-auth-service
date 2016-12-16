@@ -83,6 +83,7 @@ exports.INTEGRATION_AUTH_TENANT_STRUCTURE_MISSING = "TENANT object was not provi
 exports.INTEGRATION_AUTH_USER_USERNAME_MISSING = "Credentials are malformed in the USER object. Username missing.";
 exports.INTEGRATION_AUTH_USER_PASSWORD_MISSING = "Credentials are malformed in the USER object. Password missing.";
 exports.INTEGRATION_AUTH_TENANT_USERNAME_MISSING = "Credentials are malformed in the TENANT object. Username missing.";
+exports.INTEGRATION_AUTH_TENANT_NAME_MISSING = "Tenant info is malformed in the TENANT object. Name missing.";
 exports.INTEGRATION_AUTH_TENANT_PASSWORD_MISSING = "Credentials are malformed in the TENANT object. Password missing.";
 exports.INTEGRATION_AUTH_UNEXPECTED_RESPONSE_FROM_AS = "Unexpected response from auth server.";
 exports.INTEGRATION_AUTH_UNEXPECTED_STATUS_CODE_FROM_AS = "Unexpected 2xx status code from authentication server.";

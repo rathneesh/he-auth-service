@@ -76,13 +76,13 @@ class IdmMockServer {
     this.isRunning = false;
   }
 
-  run(username, password, tenantName, tenantPassword, cb) {
+  run(username, password, tenantName, tenantUsername, tenantPassword, cb) {
     // Setup basic auth strategy
     passport.use(new BasicStrategy(
       function(_username, _password, callback) {
         if (
-          username === _username &&
-          password === _password
+          tenantUsername === _username &&
+          tenantPassword === _password
           ) {
           return callback(null, _username);
         }
