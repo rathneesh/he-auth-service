@@ -73,6 +73,7 @@ class Auth {
   }
 
   // TODO: Boot mock server and redirect to random, unused endpoint
+  // TODO: This code introduces co-dependencies between application and test code. Refactor!
   redirect(options, cb) {
     if (this.constructor.name === "BasicAuth") {
       /* start basic auth server on 3001 */
@@ -81,10 +82,11 @@ class Auth {
     } else if (this.constructor.name === "IdmAuth") {
       /* start idm auth server on 3002 */
       mocks.IdmMockServer.run(
-        "admin",
-        "admin",
-        "admin",
-        "admin",
+        resources.MOCK_IDM_CREDS.username,
+        resources.MOCK_IDM_CREDS.password,
+        resources.MOCK_IDM_CREDS.tenantName,
+        resources.MOCK_IDM_CREDS.tenantUsername,
+        resources.MOCK_IDM_CREDS.tenantPassword,
         port => {
           let redirected = _.assign(options, {url: `http://localhost:${port}/`});
           cb(redirected);
@@ -313,6 +315,11 @@ class IdmAuth extends Auth {
       return cb(new Error(resources.INTEGRATION_AUTH_USER_PASSWORD_MISSING), null);
     }
 
+    if (!this.secrets.tenant.name) {
+      log.error(resources.INTEGRATION_AUTH_TENANT_NAME_MISSING);
+      return cb(new Error(resources.INTEGRATION_AUTH_TENANT_NAME_MISSING), null);
+    }
+
     if (!this.secrets.tenant.username) {
       log.error(resources.INTEGRATION_AUTH_TENANT_USERNAME_MISSING);
       return cb(new Error(resources.INTEGRATION_AUTH_TENANT_USERNAME_MISSING), null);
@@ -327,6 +334,7 @@ class IdmAuth extends Auth {
     const verb = this.authConfig.params.endpoint.verb;
     const username = this.secrets.user.username;
     const password = this.secrets.user.password;
+    const tenantName = this.secrets.tenant.name;
     const tenantUsername = this.secrets.tenant.username;
     const tenantPassword = this.secrets.tenant.password;
 
@@ -343,7 +351,7 @@ class IdmAuth extends Auth {
             username: username,
             password: password
           },
-          tenantName: tenantUsername
+          tenantName: tenantName
         },
         headers: {
           Authorization: auth
