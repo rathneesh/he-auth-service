@@ -88,3 +88,11 @@ exports.INTEGRATION_AUTH_TENANT_PASSWORD_MISSING = "Credentials are malformed in
 exports.INTEGRATION_AUTH_UNEXPECTED_RESPONSE_FROM_AS = "Unexpected response from auth server.";
 exports.INTEGRATION_AUTH_UNEXPECTED_STATUS_CODE_FROM_AS = "Unexpected 2xx status code from authentication server.";
 exports.INTEGRATION_AUTH_SKIPPING_AUTHENTICATION = "Endpoint missing from parameter list. Skipping authentication step.";
+
+exports.MOCK_IDM_CREDS = {
+  username: "john",
+  password: "password",
+  tenantName: "chatOps",
+  tenantUsername: "idmUser1",
+  tenantPassword: "password"
+};

@@ -25,6 +25,7 @@ const expect = require('chai').expect;
 const encryptUtil = require('./../app/routes/auth/encrypt.es6');
 const fs = require('fs');
 const async = require('async');
+const resources = require('../app/resources/strings.es6');
 
 // TODO: add test for TTL expiration.
 // Disable eslint to allow for Nock generated objects
@@ -1343,6 +1344,76 @@ describe('Test IDM authentication', function() {
         .expect(500, done);
     });
   });
+  it('Should fail if missing NAME in tenant structure', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": "admin",
+            "password": "admin"
+          },
+          "tenant": {
+            "username": "admin",
+            "password": "admin"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://basicauth/success",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(500, done);
+    });
+  });
   it('Should fail if an unsupported http verb is given.', function(done) {
     async.series([
       done => {
@@ -1413,17 +1484,18 @@ describe('Test IDM authentication', function() {
         .expect(500, done);
     });
   });
-  it('Should successfuly authenticate when payload is built correctly.', function(done) {
+  it('Should successfully authenticate when payload is built correctly.', function(done) {
     async.series([
       done => {
         let secretPayload = {
           "user": {
-            "username": "admin",
-            "password": "admin"
+            "username": resources.MOCK_IDM_CREDS.username,
+            "password": resources.MOCK_IDM_CREDS.password
           },
           "tenant": {
-            "username": "admin",
-            "password": "admin"
+            "name": resources.MOCK_IDM_CREDS.tenantName,
+            "username": resources.MOCK_IDM_CREDS.tenantUsername,
+            "password": resources.MOCK_IDM_CREDS.tenantPassword
           }
         };
 
@@ -1483,7 +1555,7 @@ describe('Test IDM authentication', function() {
         .expect(201, done);
     });
   });
-  it('Should not allow access to an agent with incorrect credentials.', function(done) {
+  it('Should not allow access to an agent with incorrect user credentials.', function(done) {
     async.series([
       done => {
         let secretPayload = {
@@ -1492,8 +1564,151 @@ describe('Test IDM authentication', function() {
             "password": "wrong"
           },
           "tenant": {
+            "name": resources.MOCK_IDM_CREDS.tenantName,
+            "username": resources.MOCK_IDM_CREDS.tenantUsername,
+            "password": resources.MOCK_IDM_CREDS.tenantPassword
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://idmauth/failure",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(401, done);
+    });
+  });
+  it('Should not allow access to an agent with incorrect tenant credentials.', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": resources.MOCK_IDM_CREDS.username,
+            "password": resources.MOCK_IDM_CREDS.password
+          },
+          "tenant": {
+            "name": resources.MOCK_IDM_CREDS.tenantName,
             "username": "wrong",
             "password": "wrong"
+          }
+        };
+
+        let secretsPubKey = fs.readFileSync('./test/assets/jwe_secrets_pub_assets.pem');
+
+        encryptUtil.encryptWithKey(secretsPubKey, JSON.stringify(secretPayload),
+          (err, encryptedSecrets) => {
+            if (err)
+              return done(err);
+            secret = encryptedSecrets;
+            done();
+          });
+      },
+      done => {
+        let payload = {
+          "user_info": {
+            "id": "abcd"
+          },
+          "integration_info": {
+            "name": "integration",
+            "auth": {
+              "type": "idm_auth",
+              "params": {
+                "endpoint": {
+                  url: "http://idmauth/failure",
+                  verb: "POST"
+                }
+              }
+            }
+          },
+          "bot_info": "xyz",
+          "url_props": {
+            "ttl": 300
+          }
+        };
+        request
+          .post('/token_urls')
+          .send(payload)
+          .expect(201)
+          .expect(res => {
+            expect(res.body).exists;
+            expect(res.body.token).exists;
+            expect(res.body.message).equals('token_url created');
+            token = res.body.token;
+          })
+          .end(err => {
+            if (err) {
+              return done(err);
+            }
+            done();
+          });
+      }
+    ], () => {
+      request
+        .post('/secrets')
+        .send({"secrets": secret, "token": token})
+        .expect(401, done);
+    });
+  });
+  it('Should not allow access to an agent with incorrect tenant NAME', function(done) {
+    async.series([
+      done => {
+        let secretPayload = {
+          "user": {
+            "username": resources.MOCK_IDM_CREDS.username,
+            "password": resources.MOCK_IDM_CREDS.password
+          },
+          "tenant": {
+            "name": "wrong",
+            "username": resources.MOCK_IDM_CREDS.tenantUsername,
+            "password": resources.MOCK_IDM_CREDS.tenantPassword
           }
         };
 
