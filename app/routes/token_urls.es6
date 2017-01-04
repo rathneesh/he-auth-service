@@ -68,7 +68,7 @@ let createToken = (req, res) => {
   };
 
   // Sign JWT with private key
-  jwt.sign(payload, server.keys.jwtToken, {algorithm: 'RS256'},
+  jwt.sign(payload, server.keys.jwtToken, {algorithm: 'RS256', expiresIn: server.app.get("token_lease")},
     (err, token) => {
       if (err) {
         log.error("An error occurred while creating token. " + err.toString());

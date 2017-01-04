@@ -120,6 +120,9 @@ app.set('jwt_audience', config.get("HE_AUDIENCE"));
 // toggle for auth mocks
 app.set('mock_auth', config.get("HE_AUTH_MOCK_AUTH") === "true");
 
+// token lease
+app.set('token_lease', config.get("HE_TOKEN_LEASE") || "1h");
+
 // Helmet can help protect your app from some well-known web vulnerabilities by setting HTTP headers appropriately.
 app.use(helmet());
 app.use(morgan('combined'));
