@@ -75,6 +75,7 @@ let authenticateSecrets = (req, res) => {
       let integration_name = integration_info.name;
       let auth_config = decoded.integration_info.auth;
       let authMethod = integration_info.auth.type;
+      let ttl = integration_info.auth.ttl || stringsResource.SECRETS_DEFAULT_TTL;
       encrypt.decryptWithKey(server.keys.jweSecretsKey, req.body.secrets, (err, decryptedSecrets) => {
         if (err) {
           log.error("An error occurred while decrypting " +
@@ -117,7 +118,7 @@ let authenticateSecrets = (req, res) => {
             `Successful authentication against ${integration_name} as ${userId} using method ${authMethod}`
           );
 
-          store.storeSecret(integration_info, user_info, readyToStoreSecrets, (err, resp) => {
+          store.storeSecret(integration_info, user_info, readyToStoreSecrets, ttl, (err, resp) => {
             if (err) {
               log.error(
                 `Internal server error while storing credentials for ${integration_name} as ${userId} in authenticateSecrets(). ${err}`

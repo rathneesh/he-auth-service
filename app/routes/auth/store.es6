@@ -23,12 +23,13 @@
 let secretsModel = require('../../models/secrets.es6');
 const log = require('./../../resources/fluentd.es6');
 
-let storeSecret = (integration, user, secrets, cb) => {
+let storeSecret = (integration, user, secrets, ttl, cb) => {
   let payload = {
     /* eslint-disable camelcase */
     integration_info: integration,
     user_info: user,
-    secrets: secrets
+    secrets: secrets,
+    ttl: ttl
   };
 
   log.debug('Saving secrets', payload);

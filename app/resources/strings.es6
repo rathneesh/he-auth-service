@@ -54,6 +54,7 @@ exports.SCHEMA_REQUIREMENT_NOT_MET = `Arguments do not meet schema requirements`
 /*
  *   Strings for secret routes
  */
+exports.SECRETS_DEFAULT_TTL = 1800;
 exports.SECRETS_SUCCESS_DELETE_MSG = `Successfully deleted secrets at /secrets/<user_name>/<integration_name>`;
 exports.SECRETS_SUCCESS_CREATE_MSG = `Successfully saved secrets at /secrets/<user_name>/<integration_name>`;
 exports.SECRETS_SUCCESS_UPDATE_MSG = `Successfully updated secrets at /secrets/<user_name>/<integration_name>`;
