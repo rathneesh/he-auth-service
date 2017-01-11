@@ -23,12 +23,13 @@
 let secretsModel = require('../../models/secrets.es6');
 const log = require('./../../resources/fluentd.es6');
 
-let storeSecret = (integration, user, secrets, cb) => {
+let storeSecret = (integration, user, secrets, ttl, cb) => {
   let payload = {
     /* eslint-disable camelcase */
     integration_info: integration,
     user_info: user,
-    secrets: secrets
+    secrets: secrets,
+    ttl: ttl
   };
 
   log.debug('Saving secrets', payload);
@@ -52,5 +53,16 @@ let readSecret = (integrationName, userId, cb) => {
   });
 };
 
+let deleteSecret = (integration, user, cb) => {
+  secretsModel.removeSecret(`${user.id}/${integration.name}`, (err, resp) => {
+    if (err) {
+      return cb(err, null);
+    }
+
+    cb(null, resp);
+  });
+};
+
 exports.storeSecret = storeSecret;
 exports.readSecret = readSecret;
+exports.deleteSecret = deleteSecret;
