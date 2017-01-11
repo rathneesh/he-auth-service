@@ -28,8 +28,21 @@ let log = require('../resources/fluentd.es6');
 let jwt = require('jsonwebtoken');
 let encrypt = require('./auth/encrypt.es6');
 let server = require('../../server.es6');
+let moment = require('moment');
+let ms = require('ms');
+let _ = require('lodash');
 
 /* eslint-disable camelcase */
+
+let ttlIsValid = ttl => {
+  if (!_.isNumber(ttl) && !_.isString(ttl)) {
+    let msg = `TTL is not in the right format: ${ttl}`;
+    log.error(msg);
+    return false;
+  }
+
+  return true;
+};
 
 let authenticateSecrets = (req, res) => {
   req.checkBody('token',
@@ -76,6 +89,24 @@ let authenticateSecrets = (req, res) => {
       let auth_config = decoded.integration_info.auth;
       let authMethod = integration_info.auth.type;
       let ttl = integration_info.auth.ttl || stringsResource.SECRETS_DEFAULT_TTL;
+
+      if (!ttlIsValid(ttl)) {
+        let msg = `Error validating TTL: ${ttl}`;
+        log.error(msg);
+        return res.status(500).send({
+          message: msg
+        });
+      }
+
+      let old_ttl = ttl;
+      if (_.isString(ttl)) {
+        ttl = ms(ttl, {});
+      } else {
+        // it is Number
+        ttl *= 1000;
+      }
+      log.info(`Converted ${old_ttl} to ${ttl} milliseconds`);
+
       encrypt.decryptWithKey(server.keys.jweSecretsKey, req.body.secrets, (err, decryptedSecrets) => {
         if (err) {
           log.error("An error occurred while decrypting " +
@@ -130,6 +161,25 @@ let authenticateSecrets = (req, res) => {
             log.info(
               `Credentials have been stored for integration ${integration_name} as ${userId}`
             );
+
+            // Fire a timeout to delete the secret according to ttl
+            let secretPath = `${user_info.id}/${integration_info.name}`;
+            let timestamp = moment();
+            timestamp.add(ttl, 'ms');
+            log.info(`Setting timeout to delete secret ${secretPath} at ${timestamp.utc()}`);
+            let deleteSecret = () => {
+              store.deleteSecret(integration_info, user_info, (err, resp) => {
+                if (err) {
+                  log.error(`Error deleting secret ${secretPath}`);
+                  return;
+                }
+                log.info(`Success deleting secret ${secretPath}`);
+                log.debug(resp);
+              });
+            };
+
+            setTimeout(deleteSecret, ttl);
+
             if (resp)
               log.info(resp);
             return res.status(201).send(

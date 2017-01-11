@@ -53,5 +53,16 @@ let readSecret = (integrationName, userId, cb) => {
   });
 };
 
+let deleteSecret = (integration, user, cb) => {
+  secretsModel.removeSecret(`${user.id}/${integration.name}`, (err, resp) => {
+    if (err) {
+      return cb(err, null);
+    }
+
+    cb(null, resp);
+  });
+};
+
 exports.storeSecret = storeSecret;
 exports.readSecret = readSecret;
+exports.deleteSecret = deleteSecret;
