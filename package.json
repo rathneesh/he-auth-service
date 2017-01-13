@@ -12,7 +12,7 @@
     "express": "^4.14.0",
     "express-validator": "^2.20.8",
     "fluent-logger": "^2.2.0",
-    "he-identity-portal": "github:eedevops/he-identity-portal",
+    "he-identity-portal": "eedevops/he-identity-portal#v0.2.2",
     "helmet": "^2.1.2",
     "jenkins-mocha": "^2.6.0",
     "joi": "^9.0.4",
