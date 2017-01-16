@@ -27,10 +27,6 @@ const missingConfigParam = require('./errors.es6').missingConfigParam;
 const authServiceClient = require('../client/client_lib.es6');
 const urlTokens = require('../models/url_tokens.es6');
 const log = require('../resources/fluentd.es6');
-const statuses = {
-  success: 'success',
-  failure: 'failed'
-};
 
 class Collector {
   constructor(config) {
@@ -39,7 +35,6 @@ class Collector {
     }
     this.portalEndpoint = config.portalEndpoint;
     this.authServiceEndpoint = config.authServiceEndpoint;
-    this.secretCollectionInterval = config.secretCollectionInterval;
     this.tokenCollectionInterval = config.tokenCollectionInterval;
     if (!this.configOk()) {
       throw missingConfigParam;
@@ -61,8 +56,7 @@ class Collector {
 
   configOk() {
     return Boolean(this.portalEndpoint) && Boolean(this.authServiceEndpoint) &&
-      this.secretCollectionInterval !== 0 &&
-      this.tokenCollectionInterval !== 0 && Boolean(this.secretCollectionInterval) && Boolean(this.tokenCollectionInterval);
+      this.tokenCollectionInterval !== 0 && Boolean(this.tokenCollectionInterval);
   }
 
   // Start collectors
@@ -70,36 +64,6 @@ class Collector {
     let portal = this.portal;
     // Make sure we stop collectors first
     this.stop(() => {
-      this.collectSecretsInterval = setInterval(() => {
-        log.debug('Collecting secrets');
-        // is `secrets` and incoming secrets array or is it a single secret?
-        portal.collectSecrets((err, secrets) => {
-          if (err) {
-            return log.error('error in collector (secrets)');
-          }
-          log.info('collected secrets');
-          log.debug('collected', secrets);
-          secrets.forEach(secret => {
-            this.sendToAuthService(secret.secret, secret.token, (err, resp) => {
-              let finalStatus = statuses.success;
-              log.info('successfully relayed secrets / tokens to auth service');
-              log.debug(resp);
-              if (err) {
-                log.error('Error posting secrets with token:', secret.token, err);
-                finalStatus = statuses.failure;
-              }
-              portal.updateStatus(secret.token, finalStatus, (err, resp) => {
-                if (err) {
-                  return log.error("An error occurred while sending update status to portal. " + err.toString());
-                }
-                log.info('Success in updating status to ' + finalStatus);
-                log.debug('response from portal service', resp);
-              });
-            });
-          });
-        });
-      }, this.secretCollectionInterval);
-
       this.collectTokensInterval = setInterval(() => {
         let state = urlTokens.getState();
 
@@ -133,8 +97,6 @@ class Collector {
 
   // Stop collectors
   stop(cb) {
-    if (this.collectSecretsInterval)
-      clearInterval(this.collectSecretsInterval);
     if (this.collectTokensInterval)
       clearInterval(this.collectTokensInterval);
     cb(null, 'ok');
@@ -155,22 +117,7 @@ class Collector {
 
   // Check all collectors running
   running() {
-    return Boolean(this.collectSecretsInterval) && Boolean(this.collectTokensInterval);
-  }
-
-  sendToAuthService(secrets, token, cb) {
-    const secretRequest = {
-      secrets,
-      token
-    };
-
-    this.authService.saveSecrets(secretRequest, (err, resp) => {
-      if (err) {
-        return cb(err, resp);
-      }
-
-      cb(null, resp);
-    });
+    return Boolean(this.collectTokensInterval);
   }
 }
 
